@@ -1,20 +1,42 @@
 <template>
   <div class="app-container">
-    <el-form ref="form" :model="form" label-width="120px">
+    <el-form
+      ref="form"
+      :model="form"
+      label-width="120px"
+    >
       <el-form-item label="活动名称">
         <el-input v-model="form.name"></el-input>
       </el-form-item>
       <el-form-item label="活动地点">
-        <el-select v-model="form.region" placeholder="请选择活动地点">
-          <el-option label="上海" value="上海"></el-option>
-          <el-option label="北京" value="北京"></el-option>
+
+        <el-select
+          v-model="form.region"
+          placeholder="请选择活动地点"
+        >
+          <el-option
+            label="上海"
+            value="上海"
+          ></el-option>
+          <el-option
+            label="北京"
+            value="北京"
+          ></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="活动时间">
         <el-col :span="11">
-          <el-date-picker type="date" placeholder="选择时间" v-model="form.date1" style="width: 100%;"></el-date-picker>
+          <el-date-picker
+            type="date"
+            placeholder="选择时间"
+            v-model="form.date1"
+            style="width: 100%;"
+          ></el-date-picker>
         </el-col>
-        <el-col class="line" :span="2">-</el-col>
+        <el-col
+          class="line"
+          :span="2"
+        >-</el-col>
         <el-col :span="11">
           <el-time-picker
             type="fixed-time"
@@ -29,10 +51,22 @@
       </el-form-item>
       <el-form-item label="额外选项">
         <el-checkbox-group v-model="form.type">
-          <el-checkbox label="在线活动" name="type"></el-checkbox>
-          <el-checkbox label="促销活动" name="type"></el-checkbox>
-          <el-checkbox label="线下活动" name="type"></el-checkbox>
-          <el-checkbox label="发布会活动" name="type"></el-checkbox>
+          <el-checkbox
+            label="在线活动"
+            name="type"
+          ></el-checkbox>
+          <el-checkbox
+            label="促销活动"
+            name="type"
+          ></el-checkbox>
+          <el-checkbox
+            label="线下活动"
+            name="type"
+          ></el-checkbox>
+          <el-checkbox
+            label="发布会活动"
+            name="type"
+          ></el-checkbox>
         </el-checkbox-group>
       </el-form-item>
       <el-form-item label="资源选项">
@@ -42,10 +76,18 @@
         </el-radio-group>
       </el-form-item>
       <el-form-item label="活动详情">
-        <tinymce v-model="form.desc" :height="300" />
+        <tinymce
+          v-model="form.desc"
+          :height="300"
+        />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="onSubmit">Create</el-button>
+        <el-button
+          type="primary"
+          @click="onSubmit"
+        >
+          Create
+        </el-button>
         <el-button @click="onCancel">Cancel</el-button>
       </el-form-item>
     </el-form>
@@ -66,22 +108,22 @@ export default {
         delivery: false,
         type: [],
         resource: "",
-        desc: ""
-      }
+        desc: "",
+      },
     };
   },
   methods: {
     onSubmit() {
-      console.log(this.form)
+      console.log(this.form);
       this.$message("submit!");
     },
     onCancel() {
       this.$message({
         message: "cancel!",
-        type: "warning"
+        type: "warning",
       });
-    }
-  }
+    },
+  },
 };
 </script>
 
