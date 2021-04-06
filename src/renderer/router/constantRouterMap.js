@@ -28,16 +28,37 @@ const Notfound = () => import('@/views/404')
 export default [
   { path: '/login', component: Login, hidden: true },
   { path: '*', component: Notfound, hidden: true },
+
   {
     path: '/',
     component: Layout,
-    redirect: '/dashboard',
-    name: '主页',
-    hidden: true,
+    redirect: '/modbus',
+    hidden: true
+  },
+
+  {
+    path: '/modbus',
+    component: Layout,
+    meta: { title: 'modbus', icon: 'form' },
     children: [{
-      path: 'dashboard',
+      path: 'index',
+      name: 'modbus',
+      component: () => import('@/views/modbus/index'),
+      meta: { title: 'mobus', icon: 'reduction' }
+    }]
+  },
+
+  {
+    path: '/landingpage',
+    component: Layout,
+    // redirect: '/landingpage/index',
+    // hidden: true,
+    meta: { title: 'landingpage', icon: 'home' },
+    children: [{
+      path: 'index',
       name: '总览',
-      component: () => import('@/components/LandingPage')
+      component: () => import('@/components/LandingPage'),
+      meta: { title: '总览', icon: 'electron-logo' }
     }]
   },
 
