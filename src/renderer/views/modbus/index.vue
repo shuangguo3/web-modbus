@@ -55,34 +55,36 @@
 </template>
 
 <script>
+const { ipcRenderer } = require('electron');
+
 export default {
-  name: "AlarmPage",
+  name: 'AlarmPage',
 
   data() {
     return {
-      activeName: "second",
+      activeName: 'second',
 
       //网络通讯日志
       netLog: [
         {
-          date: "2016-05-02",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄",
+          date: '2016-05-02',
+          name: '王小虎',
+          address: '上海市普陀区金沙江路 1518 弄',
         },
         {
-          date: "2016-05-04",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1517 弄",
+          date: '2016-05-04',
+          name: '王小虎',
+          address: '上海市普陀区金沙江路 1517 弄',
         },
         {
-          date: "2016-05-01",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1519 弄",
+          date: '2016-05-01',
+          name: '王小虎',
+          address: '上海市普陀区金沙江路 1519 弄',
         },
         {
-          date: "2016-05-03",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1516 弄",
+          date: '2016-05-03',
+          name: '王小虎',
+          address: '上海市普陀区金沙江路 1516 弄',
         },
       ],
     };
@@ -92,6 +94,13 @@ export default {
     handleClick(tab, event) {
       console.log(tab, event);
     },
+  },
+
+  created: function () {
+    console.log('ipcRenderer', ipcRenderer);
+    ipcRenderer.on('test', (event, message) => {
+      console.log(message); // Prints 'whoooooooh!'
+    });
   },
 };
 </script>
