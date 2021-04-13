@@ -2,6 +2,17 @@
 
   <div>
 
+    <el-button
+      type="primary"
+      round
+      @click="StartNetServer"
+    >启动tcp服务端</el-button>
+    <el-button
+      type="primary"
+      round
+      @click="StopNetServer"
+    >关闭tcp服务端</el-button>
+
     <el-tabs
       v-model="activeName"
       @tab-click="handleClick"
@@ -12,7 +23,7 @@
       >
 
         <el-table
-          :data="tableData"
+          :data="logDatas"
           style="width: 100%"
         >
           <el-table-column
@@ -26,7 +37,7 @@
           </el-table-column>
           <el-table-column label="日志">
             <template slot-scope="scope">
-              <p>姓名: {{ scope.row.log }}</p>
+              {{ scope.row.log }}
             </template>
           </el-table-column>
         </el-table>
@@ -57,34 +68,20 @@
 <script>
 const { ipcRenderer } = require('electron');
 
+import jsUtil from '@/utils/jsUtil.js';
+
 export default {
   name: 'AlarmPage',
 
   data() {
     return {
-      activeName: 'second',
+      activeName: 'first',
 
       //网络通讯日志
-      netLog: [
+      logDatas: [
         {
-          date: '2016-05-02',
-          name: '王小虎',
-          address: '上海市普陀区金沙江路 1518 弄',
-        },
-        {
-          date: '2016-05-04',
-          name: '王小虎',
-          address: '上海市普陀区金沙江路 1517 弄',
-        },
-        {
-          date: '2016-05-01',
-          name: '王小虎',
-          address: '上海市普陀区金沙江路 1519 弄',
-        },
-        {
-          date: '2016-05-03',
-          name: '王小虎',
-          address: '上海市普陀区金沙江路 1516 弄',
+          time: '2016-05-02',
+          log: '初始化',
         },
       ],
     };
@@ -94,12 +91,49 @@ export default {
     handleClick(tab, event) {
       console.log(tab, event);
     },
+
+    //启动tcp server
+    StartNetServer() {
+      console.log('StartNetServer');
+      this.$ipcApi.send('start-net-server').then((res) => {
+        if (res) {
+          this.$message({
+            type: 'success',
+            message: res,
+          });
+        }
+      });
+    },
+    //停止tcp server
+    StopNetServer() {
+      this.$ipcApi.send('stop-net-server').then((res) => {
+        this.$message({
+          type: 'success',
+          message: '已关闭',
+        });
+      });
+    },
   },
 
   created: function () {
     console.log('ipcRenderer', ipcRenderer);
-    ipcRenderer.on('test', (event, message) => {
-      console.log(message); // Prints 'whoooooooh!'
+    ipcRenderer.on('modbus', (event, message, param) => {
+      //console.log(event, message, params); // Prints 'whoooooooh!'
+      switch (message) {
+        case 'connect':
+          console.log('connect'); // Prints 'whoooooooh!'
+          const time = jsUtil.timestampToTime(new Date().getTime());
+          const log = param;
+          this.logDatas.push({
+            time,
+            log,
+          });
+
+          break;
+
+        default:
+          break;
+      }
     });
   },
 };

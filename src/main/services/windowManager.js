@@ -76,11 +76,12 @@ function createMainWindow() {
     }
   });
 
+  /*
   setInterval(() => {
     console.log('setInterval');
-    global.windowList.mainWindow.webContents.send('test', 'whoooooooh!');
+    global.windowList.mainWindow.webContents.send('modbus', 'connect', JSON.stringify({ aaa: 'aaa' }));
   }, 5000);
-
+  */
 
 }
 

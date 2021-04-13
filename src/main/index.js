@@ -5,10 +5,20 @@ import initWindow from './services/windowManager';
 import DisableButton from './config/DisableButton';
 import electronDevtoolsInstaller, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 
+import netServer from './netServer/index.js';
+let server;
+
 // 定义全局变量，保存创建的窗口列表
 global.windowList = {};
 
-function onAppReady() {
+async function onAppReady() {
+
+  if (server) {
+    server.close();
+  } else {
+    server = await netServer.StartServer();
+  }
+
   initWindow();
   DisableButton.Disablef12();
   if (process.env.NODE_ENV === 'development') {
