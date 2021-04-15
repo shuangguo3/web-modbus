@@ -5,19 +5,17 @@ import initWindow from './services/windowManager';
 import DisableButton from './config/DisableButton';
 import electronDevtoolsInstaller, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 
-import netServer from './netServer/index.js';
-let server;
+const ModbusTcp = require('../modbus/tcp.js');
 
 // 定义全局变量，保存创建的窗口列表
 global.windowList = {};
 
 async function onAppReady() {
 
-  if (server) {
-    server.close();
-  } else {
-    server = await netServer.StartServer();
-  }
+  // 启动modbus tcp服务器，并且保存在全局变量global
+  global.modbusTcp = new ModbusTcp();
+  // 必须先主动listen（作为server）或者connect（作为client）
+  global.modbusTcp.listen(7777);
 
   initWindow();
   DisableButton.Disablef12();

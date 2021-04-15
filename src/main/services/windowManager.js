@@ -26,6 +26,7 @@ function createMainWindow() {
     frame: config.IsUseSysTitle,
     titleBarStyle: 'hidden',
     webPreferences: {
+      // enableRemoteModule: true,//使用remote
       nodeIntegration: true,
       webSecurity: false,
       // 如果是开发模式可以使用devTools

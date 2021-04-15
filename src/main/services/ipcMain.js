@@ -63,9 +63,9 @@ export default {
         );
       }
     });
-    // 启动tcp socket server
-    ipcMain.handle('start-net-server', async () => {
-      console.log('ipcMain start-net-server');
+    // modbus请求
+    ipcMain.handle('modbus', async () => {
+      console.log('ipcMain modbus');
 
       try {
         const serveStatus = await netServer.StartServer();
@@ -78,18 +78,7 @@ export default {
         );
       }
     });
-    // 停止tcp socket server
-    ipcMain.handle('stop-net-server', async (event, arg) => {
-      try {
-        const serveStatus = await netServer.StopServer();
-        return serveStatus;
-      } catch (error) {
-        dialog.showErrorBox(
-          '错误',
-          error
-        );
-      }
-    });
+
     ipcMain.handle('open-win', (event, arg) => {
       const ChildWin = new BrowserWindow({
         height: 595,
