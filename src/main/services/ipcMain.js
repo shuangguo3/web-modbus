@@ -2,7 +2,7 @@ import { ipcMain, dialog, BrowserWindow } from 'electron';
 import Server from '../server/index';
 import { winURL } from '../config/StaticPath';
 
-import netServer from '../netServer/index.js';
+const ModbusRtu = require('../../modbus/rtu.js');
 
 export default {
   Mainfunc(mainWindow, IsUseSysTitle) {
@@ -64,19 +64,90 @@ export default {
       }
     });
     // modbus请求
-    ipcMain.handle('modbus', async () => {
-      console.log('ipcMain modbus');
+    ipcMain.handle('modbus', async (event, msg, params) => {
+      console.log('ipcMain modbus', msg, params);
 
-      try {
-        const serveStatus = await netServer.StartServer();
-        console.log(serveStatus);
-        return serveStatus;
-      } catch (error) {
-        dialog.showErrorBox(
-          '错误',
-          error
-        );
+      const modbusTcp = global.modbusTcp;
+      let modbusRtu;
+
+      switch (msg) {
+        case 'createRtu':
+
+          modbusRtu = new ModbusRtu({
+            tcp: modbusTcp,
+            // 通信对端的ip和端口，标识唯一的通信信道
+            ip: params.ip,
+            port: params.port,
+          });
+          return modbusRtu.connectionId;
+
+
+        case 'ReadHoldingRegisters':
+
+          modbusRtu = modbusTcp.rtuList[params.connectionId];
+          if (!modbusRtu) return;
+
+          modbusRtu.ReadHoldingRegisters({
+            slaveAddr: params.slaveAddr,
+            regAddr: params.regAddr,
+            regQuantity: params.regQuantity,
+            callback: (requestInfo) => {
+
+              console.log('callback', requestInfo);
+
+
+              // delete requestInfo.callback;
+              // delete requestInfo.errorCallback;
+
+              // requestInfo.requestBuf = requestInfo.requestBuf.toString();
+              // requestInfo.responseBuf = requestInfo.responseBuf.toString();
+
+              modbusRtu.getHoldingRegistersValue((regInfos) => {
+
+                global.windowList.mainWindow.webContents.send(
+                  'modbus',
+                  'onReadHoldingRegisters',
+                  // requestInfo,
+                  regInfos, // 返回寄存器值数组
+                  // 返回可序列化的请求信息（去掉不可序列化的回调函数）
+                  {
+                    slaveAddr: params.slaveAddr,
+                    regAddr: params.regAddr,
+                    regQuantity: params.regQuantity,
+                  }
+                  // requestInfo.requestBuf,
+                  // requestInfo.responseBuf
+                );
+
+              });
+
+
+              // arg.params.callback(requestInfo);
+              // console.log('callback', requestInfo);
+
+            /*
+            this.modbusRtu.getHoldingRegistersValue((regInfo) => {
+              //
+              this.regDatas.push({
+                regAddr: regInfo.regAddr,
+                valueOf16: regInfo.regValue,
+                valueOf10: regInfo.regValue,
+              });
+            });
+            */
+            },
+            errorCallback(errorCode, requestInfo) {
+              console.log('errorCallback', errorCode, requestInfo);
+            },
+
+          });
+          break;
+
+        default:
+          break;
       }
+
+
     });
 
     ipcMain.handle('open-win', (event, arg) => {

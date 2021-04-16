@@ -87,18 +87,17 @@
 </template>
 
 <script>
-const { ipcRenderer, remote } = require('electron');
+//const { ipcRenderer } = require('electron');
+import { ipcRenderer } from 'electron';
 
 import jsUtil from '@/utils/jsUtil.js';
-
-const ModbusRtu = require('../../../modbus/rtu.js');
 
 export default {
   name: 'AlarmPage',
 
   data() {
     return {
-      modbusRtu: null,
+      modbusConnectionId: null,
       regDatas: [],
 
       activeName: 'first',
@@ -118,16 +117,7 @@ export default {
       console.log(tab, event);
     },
 
-    readHoldingRegisters() {
-      this.$ipcApi.send('modbus', {
-        fc: 'ReadHoldingRegisters',
-        params: {
-          slaveAddr: 0x01,
-          regAddr: 0x8008,
-          regQuantity: 6,
-          callback: (slaveInfo) => {
-            console.log('callback', slaveInfo);
-
+    /*
             this.modbusRtu.getHoldingRegistersValue((regInfo) => {
               //
               this.regDatas.push({
@@ -136,35 +126,55 @@ export default {
                 valueOf10: regInfo.regValue,
               });
             });
-          },
-          errorCallback(errorCode, slaveInfo) {
-            console.log('errorCallback', errorCode, slaveInfo);
-          },
-        },
-      });
+            */
 
-      this.modbusRtu.ReadHoldingRegisters();
+    readHoldingRegisters() {
+      ipcRenderer.invoke('modbus', 'ReadHoldingRegisters', {
+        connectionId: this.modbusConnectionId,
+        slaveAddr: 0x01,
+        regAddr: 0x8008,
+        regQuantity: 6,
+        /*
+        callback: (requestInfo) => {
+          console.log('callback', requestInfo);
+        },
+        errorCallback(errorCode, requestInfo) {
+          console.log('errorCallback', errorCode, requestInfo);
+        },
+        */
+      });
     },
   },
 
   created: function () {
-    console.log('ipcRenderer', ipcRenderer);
+    // electron 通信协议详解
+    ipcRenderer
+      .invoke('modbus', 'createRtu', {
+        //
+        // 通信对端的ip和端口，标识唯一的通信信道
+        ip: '192.168.1.254',
+        port: 30002,
+      })
+      .then((result) => {
+        this.modbusConnectionId = result;
+        console.log('this.modbusConnectionId', this.modbusConnectionId);
+      });
 
-    console.log('remote', remote);
-    const modbusTcp = remote.getGlobal('modbusTcp');
-
-    console.log('global.modbusRtu', modbusTcp);
-
-    this.modbusRtu = new ModbusRtu({
-      tcp: modbusTcp,
-      // 通信对端的ip和端口，标识唯一的通信信道
-      ip: '192.168.1.254',
-      port: 30002,
-    });
-
-    ipcRenderer.on('modbus', (event, message, param) => {
+    ipcRenderer.on('modbus', (event, msg, params, requestInfo) => {
       //console.log(event, message, params); // Prints 'whoooooooh!'
-      switch (message) {
+
+      let requestInfo;
+      switch (msg) {
+        case 'onReadHoldingRegisters':
+          //console.log('ipcRenderer modbus', msg, params);
+          requestInfo = params;
+          requestInfo.requestBuf = Buffer.from(requestInfo.requestBuf);
+          requestInfo.responseBuf = Buffer.from(requestInfo.requestBuf);
+
+          console.log('ipcRenderer modbus', requestInfo);
+          break;
+
+        /*
         case 'connect':
           console.log('connect'); // Prints 'whoooooooh!'
           const time = jsUtil.timestampToTime(new Date().getTime());
@@ -175,6 +185,7 @@ export default {
           });
 
           break;
+          */
 
         default:
           break;
