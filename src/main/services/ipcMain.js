@@ -94,47 +94,25 @@ export default {
             callback: (requestInfo) => {
 
               console.log('callback', requestInfo);
-
-
-              // delete requestInfo.callback;
-              // delete requestInfo.errorCallback;
-
-              // requestInfo.requestBuf = requestInfo.requestBuf.toString();
-              // requestInfo.responseBuf = requestInfo.responseBuf.toString();
-
               modbusRtu.getHoldingRegistersValue((regInfos) => {
+
+                console.log('modbusRtu.getHoldingRegistersValue regInfos', regInfos);
 
                 global.windowList.mainWindow.webContents.send(
                   'modbus',
                   'onReadHoldingRegisters',
                   // requestInfo,
-                  regInfos, // 返回寄存器值数组
-                  // 返回可序列化的请求信息（去掉不可序列化的回调函数）
+                  regInfos, // 返回寄存器值列表
+                  // 只返回可序列化的请求信息（去掉不可序列化的回调函数等），否则无法进行进程间调用
                   {
                     slaveAddr: params.slaveAddr,
                     regAddr: params.regAddr,
                     regQuantity: params.regQuantity,
                   }
-                  // requestInfo.requestBuf,
-                  // requestInfo.responseBuf
                 );
 
               });
 
-
-              // arg.params.callback(requestInfo);
-              // console.log('callback', requestInfo);
-
-            /*
-            this.modbusRtu.getHoldingRegistersValue((regInfo) => {
-              //
-              this.regDatas.push({
-                regAddr: regInfo.regAddr,
-                valueOf16: regInfo.regValue,
-                valueOf10: regInfo.regValue,
-              });
-            });
-            */
             },
             errorCallback(errorCode, requestInfo) {
               console.log('errorCallback', errorCode, requestInfo);

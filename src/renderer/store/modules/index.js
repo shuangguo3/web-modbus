@@ -7,12 +7,12 @@
  * 没有什么意外无需更改这里的代码和外部的index代码，需要如果需要将值暴露给
  * getter的话，还请自行手动添加，它的弊端就是不能够再这里留空文件，不然就会出现Cannot read property 'getters' of undefined的控制台报错信息
  */
-const files = require.context('.', false, /\.js$/)
-const modules = {}
+const files = require.context('.', false, /\.js$/);
+const modules = {};
 
 files.keys().forEach(key => {
-  if (key === './index.js') return
-  modules[key.replace(/(\.\/|\.js)/g, '')] = files(key).default
-})
+  if (key === './index.js') return;
+  modules[key.replace(/(\.\/|\.js)/g, '')] = files(key).default;
+});
 
-export default modules
+export default modules;

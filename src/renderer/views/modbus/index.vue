@@ -2,6 +2,19 @@
 
   <div>
 
+    <el-select
+      v-model="value"
+      placeholder="请选择"
+    >
+      <el-option
+        v-for="item in options"
+        :key="item.value"
+        :label="item.label"
+        :value="item.value"
+      >
+      </el-option>
+    </el-select>
+
     <el-tabs
       v-model="activeName"
       @tab-click="handleClick"
@@ -49,12 +62,12 @@
         >
           <el-table-column label="地址">
             <template slot-scope="scope">
-              {{ scope.row.regAddr }}
+              0x{{ scope.row.regAddr }}
             </template>
           </el-table-column>
           <el-table-column label="16进制值">
             <template slot-scope="scope">
-              {{ scope.row.valueOf16 }}
+              0x{{ scope.row.valueOf16 }}
             </template>
           </el-table-column>
           <el-table-column label="10进制值">
@@ -97,7 +110,32 @@ export default {
 
   data() {
     return {
+      value: '',
+      options: [
+        {
+          value: '选项1',
+          label: '黄金糕',
+        },
+        {
+          value: '选项2',
+          label: '双皮奶',
+        },
+        {
+          value: '选项3',
+          label: '蚵仔煎',
+        },
+        {
+          value: '选项4',
+          label: '龙须面',
+        },
+        {
+          value: '选项5',
+          label: '北京烤鸭',
+        },
+      ],
+
       modbusConnectionId: null,
+      regDataList: {},
       regDatas: [],
 
       activeName: 'first',
@@ -147,45 +185,62 @@ export default {
   },
 
   created: function () {
-    // electron 通信协议详解
-    ipcRenderer
-      .invoke('modbus', 'createRtu', {
-        //
-        // 通信对端的ip和端口，标识唯一的通信信道
-        ip: '192.168.1.254',
-        port: 30002,
-      })
-      .then((result) => {
-        this.modbusConnectionId = result;
-        console.log('this.modbusConnectionId', this.modbusConnectionId);
-      });
-
     ipcRenderer.on('modbus', (event, msg, params, requestInfo) => {
-      //console.log(event, message, params); // Prints 'whoooooooh!'
+      console.log('modbus', msg, params, requestInfo); // Prints 'whoooooooh!'
 
-      let requestInfo;
       switch (msg) {
         case 'onReadHoldingRegisters':
-          //console.log('ipcRenderer modbus', msg, params);
-          requestInfo = params;
-          requestInfo.requestBuf = Buffer.from(requestInfo.requestBuf);
-          requestInfo.responseBuf = Buffer.from(requestInfo.requestBuf);
+          console.log('this.regDatas', this.regDatas);
+          //regDataList = this.regDataList;
+          const regDatas = this.regDatas;
+          for (let regAddr in params) {
+            const regValue = params[regAddr];
 
-          console.log('ipcRenderer modbus', requestInfo);
+            // 检查去重
+            if (this.regDataList[regAddr] === regValue) {
+              continue;
+            }
+            this.regDataList[regAddr] = regValue;
+
+            //json 的key一定是string类型，需要转化为number类型，才能使用toString函数
+            regAddr = Number(regAddr);
+
+            regDatas.push({
+              regAddr: regAddr.toString(16),
+              valueOf16: regValue.toString(16),
+              valueOf10: regValue.toString(),
+            });
+          }
+          //hex.toString(16)
+          console.log('this.regDatas', this.regDatas);
+          // 数组去重
+          this.regDatas = regDatas;
           break;
 
-        /*
-        case 'connect':
+        // 客户端已连接
+        case 'onConnection':
           console.log('connect'); // Prints 'whoooooooh!'
           const time = jsUtil.timestampToTime(new Date().getTime());
-          const log = param;
+          const log = `${params.ip}:${params.port} connected`;
           this.logDatas.push({
             time,
             log,
           });
 
+          // 创建rtu
+          ipcRenderer
+            .invoke('modbus', 'createRtu', {
+              //
+              // 通信对端的ip和端口，标识唯一的通信信道
+              ip: params.ip,
+              port: params.port,
+            })
+            .then((result) => {
+              this.modbusConnectionId = result;
+              console.log('this.modbusConnectionId', this.modbusConnectionId);
+            });
+
           break;
-          */
 
         default:
           break;

@@ -13,4 +13,6 @@ module.exports = {
   IsUseSysTitle: true,
   DllFolder: '',
   BuiltInServerPort: 25565,
+
+  ModbusTcpListenPort: 7777,
 };

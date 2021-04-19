@@ -173,4 +173,10 @@ export default {
 
     return time;
   },
+
+  /*
+  hexToString(hex) {
+    return hex.toString(16);
+  },
+  */
 };

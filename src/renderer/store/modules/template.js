@@ -4,7 +4,7 @@ const template = {
 
   mutations: {},
 
-  actions: {}
-}
+  actions: {},
+};
 
-export default template
+export default template;

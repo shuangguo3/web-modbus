@@ -1,6 +1,6 @@
-import Layout from '@/layout'
-const Login = () => import('@/views/login')
-const Notfound = () => import('@/views/404')
+import Layout from '@/layout';
+const Login = () => import('@/views/login');
+const Notfound = () => import('@/views/404');
 /**
 * hidden: true                   if `hidden:true` will not show in the sidebar(default is false)
 * alwaysShow: true               if set true, will always show the root menu, whatever its child routes length
@@ -31,9 +31,9 @@ export default [
 
   {
     path: '/',
-    component: Layout,
+    // component: Layout,
     redirect: '/modbus',
-    hidden: true
+    hidden: true,
   },
 
   {
@@ -44,8 +44,8 @@ export default [
       path: 'index',
       name: 'modbus',
       component: () => import('@/views/modbus/index'),
-      meta: { title: 'mobus', icon: 'reduction' }
-    }]
+      meta: { title: 'mobus', icon: 'reduction' },
+    }],
   },
 
   {
@@ -58,8 +58,8 @@ export default [
       path: 'index',
       name: '总览',
       component: () => import('@/components/LandingPage'),
-      meta: { title: '总览', icon: 'electron-logo' }
-    }]
+      meta: { title: '总览', icon: 'electron-logo' },
+    }],
   },
 
   {
@@ -71,15 +71,15 @@ export default [
         path: 'index',
         name: 'Form',
         component: () => import('@/views/form/index'),
-        meta: { title: '表单', icon: 'form' }
+        meta: { title: '表单', icon: 'form' },
       },
       {
         path: 'index2',
         name: 'Form2',
         component: () => import('@/views/form/index'),
-        meta: { title: '表单2', icon: 'form' }
-      }
-    ]
+        meta: { title: '表单2', icon: 'form' },
+      },
+    ],
   },
   {
     path: '/table',
@@ -89,8 +89,8 @@ export default [
         path: 'index',
         name: '表格',
         component: () => import('@/views/table/index'),
-        meta: { title: '表格', icon: 'table' }
-      }
-    ]
-  }
-]
+        meta: { title: '表格', icon: 'table' },
+      },
+    ],
+  },
+];
