@@ -105,6 +105,7 @@ export default {
                   regInfos, // 返回寄存器值列表
                   // 只返回可序列化的请求信息（去掉不可序列化的回调函数等），否则无法进行进程间调用
                   {
+                    connectionId: params.connectionId,
                     slaveAddr: params.slaveAddr,
                     regAddr: params.regAddr,
                     regQuantity: params.regQuantity,

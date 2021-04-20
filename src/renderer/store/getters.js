@@ -8,5 +8,7 @@ const getters = {
   avatar: state => state.user.avatar,
   name: state => state.user.name,
   roles: state => state.user.roles,
+
+  modbusConnectionList: state => state.modbus.connectionList,
 };
 export default getters;
