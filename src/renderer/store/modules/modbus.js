@@ -3,7 +3,7 @@
 
 const modbus = {
   state: {
-    // 需要先主动去读取一次modbus connectionList，避免丢失在渲染进程监听前的连接
+    // 需要先主动去读取一次modbus connectionList，避免丢失渲染进程启动监听前的连接
     connectionList: {},
   },
   mutations: {

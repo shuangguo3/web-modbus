@@ -5,14 +5,14 @@ import initWindow from './services/windowManager';
 import DisableButton from './config/DisableButton';
 import electronDevtoolsInstaller, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 
-import initModbusTcp from './services/modbusTcp.js';
+import modbusMainInit from './services/modbus.js';
 
 // 定义全局变量，保存创建的窗口列表
 global.windowList = {};
 
 async function onAppReady() {
 
-  initModbusTcp();
+  modbusMainInit();
 
   initWindow();
   DisableButton.Disablef12();

@@ -5,14 +5,15 @@
 import config from '@config';
 const ModbusTcp = require('../../modbus/tcp');
 
-function initModbusTcp() {
+// modbus在主进程内的初始化
+function modbusMainInit() {
   // 启动modbus tcp服务器，并且保存在全局变量global
   global.modbusTcp = new ModbusTcp({
 
-    // 把已连接的所有connectionList发给渲染进程，避免丢失掉在渲染进程监听前收到的连接
+    // 把已连接的所有connectionList发给渲染进程，避免丢失在渲染进程监听前收到的连接
     onConnection(ip, port, connectionList) {
 
-      console.log('initModbusTcp onConnection');
+      console.log('modbusMainInit onConnection');
       global.windowList.mainWindow.webContents.send(
         'modbus',
         'onConnection',
@@ -26,7 +27,7 @@ function initModbusTcp() {
     // 把已连接的所有connectionList发给渲染进程，避免丢失掉在渲染进程监听前收到的连接
     onEnd(ip, port, connectionList) {
 
-      console.log('initModbusTcp onEnd');
+      console.log('modbusMainInit onEnd');
       global.windowList.mainWindow.webContents.send(
         'modbus',
         'onEnd',
@@ -41,4 +42,4 @@ function initModbusTcp() {
   global.modbusTcp.listen(config.ModbusTcpListenPort);
 
 }
-export default initModbusTcp;
+export default modbusMainInit;

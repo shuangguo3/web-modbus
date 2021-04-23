@@ -5,7 +5,7 @@
 
 import { ipcRenderer } from 'electron';
 
-function initModbus(vueInstance) {
+function modbusRenderInit(vueInstance) {
   console.log('store modbus');
   ipcRenderer.on('modbus', (event, msg, params) => {
     console.log('modbus', msg, params); // Prints 'whoooooooh!'
@@ -37,24 +37,18 @@ function initModbus(vueInstance) {
         vueInstance.$store.dispatch('newConnection', { connectionList });
 
         /*
-      this.logDatas.push({
-        time,
-        log,
-      });
-
-
-      // 创建rtu
-      ipcRenderer
-        .invoke('modbus', 'createRtu', {
-          //
-          // 通信对端的ip和端口，标识唯一的通信信道
-          ip: params.ip,
-          port: params.port,
-        })
-        .then((result) => {
-          this.modbusConnectionId = result;
-          console.log('this.modbusConnectionId', this.modbusConnectionId);
-        });
+        // 创建rtu
+        ipcRenderer
+          .invoke('modbus', 'createRtu', {
+            //
+            // 通信对端的ip和端口，标识唯一的通信信道
+            ip: params.ip,
+            port: params.port,
+          })
+          .then((result) => {
+            this.modbusConnectionId = result;
+            console.log('this.modbusConnectionId', this.modbusConnectionId);
+          });
         */
 
         break;
@@ -65,4 +59,4 @@ function initModbus(vueInstance) {
   });
 
 }
-export default initModbus;
+export default modbusRenderInit;

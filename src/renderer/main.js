@@ -12,7 +12,7 @@ import './error';
 import './icons';
 import '@/styles/index.scss';
 
-import modbusInit from './modbusInit.js';
+import modbusRenderInit from './modbusRenderInit.js';
 
 if (!process.env.IS_WEB) {
   if (!require('../../config').IsUseSysTitle) {
@@ -34,6 +34,6 @@ const vue = new Vue({
 }).$mount('#app');
 
 // 在渲染进程内进行modbus初始化，比如设置事件监听，当有新的modbus tcp连接时，在store增加connectionId
-modbusInit(vue);
+modbusRenderInit(vue);
 
 export default vue;

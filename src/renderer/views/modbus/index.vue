@@ -47,7 +47,7 @@
         >开始读寄存器</el-button>
 
         <el-table
-          :data="regDatas[modbusConnectionId]"
+          :data="regDatas[connectionId]"
           style="width: 100%"
         >
           <el-table-column label="地址">
@@ -86,8 +86,7 @@ export default {
   data() {
     return {
       //modbusConnection: '',
-
-      modbusConnectionId: null,
+      modbusConnection: null,
 
       modbusConnectionTabList: [],
       regDataList: {},
@@ -107,8 +106,8 @@ export default {
   watch: {
     '$store.state.modbus.connectionList': {
       immediate: true,
-      handler(modbusConnectionList, b) {
-        console.log('watch modbusConnectionList', modbusConnectionList, b);
+      handler(modbusConnectionList) {
+        console.log('watch modbusConnectionList', modbusConnectionList);
         this.modbusConnectionTabList = modbusConnectionList;
 
         for (const modbusConnectionId in modbusConnectionList) {
@@ -130,11 +129,16 @@ export default {
 
     handleClick(tab, event) {
       console.log(tab, event);
+      console.log(tab.name, tab.label);
+      this.modbusConnection = this.modbusConnectionTabList[tab.name];
     },
 
     readHoldingRegisters() {
       ipcRenderer.invoke('modbus', 'ReadHoldingRegisters', {
-        connectionId: this.modbusConnectionId,
+        ip: this.modbusConnection.ip,
+        // 当明确对端ip下，只有一个连接时，可以忽略port
+        // port: this.modbusConnection.port,
+
         slaveAddr: 0x01,
         regAddr: 0x8008,
         regQuantity: 6,
@@ -151,6 +155,14 @@ export default {
   },
 
   created: function () {
+    // 主动去获取一次modbus连接列表，避免渲染进程未启动时，遗漏主进程已经收到了连接
+    ipcRenderer
+      .invoke('modbus', 'getConnectionList')
+      .then((modbusConnectionList) => {
+        console.log(modbusConnectionList);
+        this.modbusConnectionTabList = modbusConnectionList;
+      });
+
     ipcRenderer.on('modbus', (event, msg, params, requestInfo) => {
       console.log('modbus', msg, params, requestInfo);
 
@@ -200,20 +212,6 @@ export default {
             time,
             log,
           });
-
-          // 创建rtu
-          ipcRenderer
-            .invoke('modbus', 'createRtu', {
-              //
-              // 通信对端的ip和端口，标识唯一的通信信道
-              ip: params.ip,
-              port: params.port,
-            })
-            .then((result) => {
-              this.modbusConnectionId = result;
-              console.log('this.modbusConnectionId', this.modbusConnectionId);
-            });
-
           break;
 
         // 客户端关闭
@@ -225,21 +223,6 @@ export default {
             time,
             log,
           });
-
-          /*
-          // 创建rtu
-          ipcRenderer
-            .invoke('modbus', 'createRtu', {
-              //
-              // 通信对端的ip和端口，标识唯一的通信信道
-              ip: params.ip,
-              port: params.port,
-            })
-            .then((result) => {
-              this.modbusConnectionId = result;
-              console.log('this.modbusConnectionId', this.modbusConnectionId);
-            });
-            */
 
           break;
 

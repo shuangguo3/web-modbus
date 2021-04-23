@@ -71,6 +71,8 @@ export default {
       let modbusRtu;
 
       switch (msg) {
+
+        /*
         case 'createRtu':
 
           modbusRtu = new ModbusRtu({
@@ -81,11 +83,20 @@ export default {
           });
           return modbusRtu.connectionId;
 
+          */
+
+        // 获取连接列表
+        case 'getConnectionList':
+          event.result = modbusTcp.connectionList;
+          break;
 
         case 'ReadHoldingRegisters':
 
           modbusRtu = modbusTcp.rtuList[params.connectionId];
-          if (!modbusRtu) return;
+          if (!modbusRtu) {
+            console.log('rtu not exist:', params.ip, params.port);
+            return;
+          }
 
           modbusRtu.ReadHoldingRegisters({
             slaveAddr: params.slaveAddr,
