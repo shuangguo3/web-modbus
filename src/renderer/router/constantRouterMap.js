@@ -30,24 +30,36 @@ export default [
   { path: '*', component: Notfound, hidden: true },
 
   {
-    path: '/',
-    // component: Layout,
-    redirect: '/modbus',
     hidden: true,
+    path: '/',
+    name: '/',
+    redirect: '/modbus',
+    component: Layout,
+    meta: { title: 'modbus', icon: 'form' },
+    children: [{
+      path: 'modbus',
+      component: () => import('@/views/modbus/index'),
+      meta: { title: 'mobus', icon: 'reduction' },
+    }],
+
+
   },
+
 
   {
     path: '/modbus',
+    name: 'modbus',
     component: Layout,
     meta: { title: 'modbus', icon: 'form' },
     children: [{
       path: 'index',
-      name: 'modbus',
       component: () => import('@/views/modbus/index'),
       meta: { title: 'mobus', icon: 'reduction' },
     }],
   },
 
+
+  /*
   {
     path: '/landingpage',
     component: Layout,
@@ -93,4 +105,5 @@ export default [
       },
     ],
   },
+  */
 ];

@@ -34,22 +34,8 @@ function modbusRenderInit(vueInstance) {
         log = `${connectionId} connected`;
         console.log(log);
 
+        // 设置store的connectionList
         vueInstance.$store.dispatch('newConnection', { connectionList });
-
-        /*
-        // 创建rtu
-        ipcRenderer
-          .invoke('modbus', 'createRtu', {
-            //
-            // 通信对端的ip和端口，标识唯一的通信信道
-            ip: params.ip,
-            port: params.port,
-          })
-          .then((result) => {
-            this.modbusConnectionId = result;
-            console.log('this.modbusConnectionId', this.modbusConnectionId);
-          });
-        */
 
         break;
 

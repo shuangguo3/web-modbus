@@ -68,55 +68,57 @@ export default {
       console.log('ipcMain modbus', msg, params);
 
       const modbusTcp = global.modbusTcp;
-      let modbusRtu;
+      let modbusRtu,
+        connectionId;
+
+      if (params) {
+        if (params.port) {
+          connectionId = `${params.ip}:${params.port}`;
+          modbusRtu = modbusTcp.rtuList[params.ip][params.port];
+        } else {
+          connectionId = `${params.ip}`;
+          modbusRtu = modbusTcp.rtuList[params.ip][0];
+        }
+        if (!modbusRtu) {
+          console.log('rtu not exist:', params.connectionId);
+          return;
+        }
+      }
 
       switch (msg) {
 
-        /*
-        case 'createRtu':
-
-          modbusRtu = new ModbusRtu({
-            tcp: modbusTcp,
-            // 通信对端的ip和端口，标识唯一的通信信道
-            ip: params.ip,
-            port: params.port,
-          });
-          return modbusRtu.connectionId;
-
-          */
-
         // 获取连接列表
         case 'getConnectionList':
-          event.result = modbusTcp.connectionList;
-          break;
+          console.log('getConnectionList', modbusTcp.connectionList);
+          // event.returnValue = modbusTcp.connectionList;
 
-        case 'ReadHoldingRegisters':
+          return modbusTcp.connectionList;
+          // break;
 
-          modbusRtu = modbusTcp.rtuList[params.connectionId];
-          if (!modbusRtu) {
-            console.log('rtu not exist:', params.ip, params.port);
-            return;
-          }
+        case 'checkSlaveAddr':
 
-          modbusRtu.ReadHoldingRegisters({
+          // 调用rtu的读取保存寄存器方法
+          modbusRtu.readHoldingRegisters({
             slaveAddr: params.slaveAddr,
-            regAddr: params.regAddr,
-            regQuantity: params.regQuantity,
+            // 读取任意1个寄存器地址，如果超时表示：slaveaddr不存在
+            regAddr: 0,
+            regQuantity: 1,
             callback: (requestInfo) => {
 
               console.log('callback', requestInfo);
-              modbusRtu.getHoldingRegistersValue((regInfos) => {
+              // 读取保存寄存器成功后，调用rtu的获取寄存器值方法（把本次获取的寄存器值放入列表），并在回调函数里把寄存器值发送给渲染进程
+              modbusRtu.getHoldingRegistersValue(() => {
 
-                console.log('modbusRtu.getHoldingRegistersValue regInfos', regInfos);
-
+                // 寄存器读取成功，表示当前slaveaddr存在，可正常调用
                 global.windowList.mainWindow.webContents.send(
                   'modbus',
-                  'onReadHoldingRegisters',
-                  // requestInfo,
-                  regInfos, // 返回寄存器值列表
-                  // 只返回可序列化的请求信息（去掉不可序列化的回调函数等），否则无法进行进程间调用
+                  'onCheckSlaveAddr',
+                  null,
                   {
-                    connectionId: params.connectionId,
+                    ip: params.ip,
+                    port: params.port,
+                    connectionId,
+
                     slaveAddr: params.slaveAddr,
                     regAddr: params.regAddr,
                     regQuantity: params.regQuantity,
@@ -128,6 +130,89 @@ export default {
             },
             errorCallback(errorCode, requestInfo) {
               console.log('errorCallback', errorCode, requestInfo);
+
+              // 寄存器读取失败，表示当前slaveaddr不存在，不可调用
+              global.windowList.mainWindow.webContents.send(
+                'modbus',
+                'onCheckSlaveAddr',
+                null,
+                {
+                  errorCode, // 错误码
+
+                  ip: params.ip,
+                  port: params.port,
+                  connectionId,
+
+                  slaveAddr: params.slaveAddr,
+                  regAddr: params.regAddr,
+                  regQuantity: params.regQuantity,
+                }
+              );
+
+            },
+
+          });
+          break;
+
+        case 'readHoldingRegisters':
+
+          // console.log('modbusRtu', modbusRtu);
+
+          // 调用rtu的读取保存寄存器方法
+          modbusRtu.readHoldingRegisters({
+            slaveAddr: params.slaveAddr,
+            regAddr: params.regAddr,
+            regQuantity: params.regQuantity,
+            callback: (requestInfo) => {
+
+              console.log('callback', requestInfo);
+              // 读取保存寄存器成功后，调用rtu的获取寄存器值方法（把本次获取的寄存器值放入列表），并在回调函数里把寄存器值发送给渲染进程
+              modbusRtu.getHoldingRegistersValue((regInfos) => {
+
+                console.log('modbusRtu.getHoldingRegistersValue regInfos', regInfos);
+
+                // 把寄存器值发送给渲染进程
+                global.windowList.mainWindow.webContents.send(
+                  'modbus',
+                  'onReadHoldingRegisters',
+                  // requestInfo,
+                  regInfos, // 返回寄存器值列表
+                  // 只返回可序列化的请求信息（去掉不可序列化的回调函数等），否则无法进行进程间调用
+                  {
+                    ip: params.ip,
+                    port: params.port,
+                    connectionId,
+
+                    slaveAddr: params.slaveAddr,
+                    regAddr: params.regAddr,
+                    regQuantity: params.regQuantity,
+                  }
+                );
+
+              });
+
+            },
+            errorCallback(errorCode, requestInfo) {
+              console.log('errorCallback', errorCode, requestInfo);
+
+              // 把错误信息发送给渲染进程
+              global.windowList.mainWindow.webContents.send(
+                'modbus',
+                'onReadHoldingRegisters',
+                // requestInfo,
+                null,
+                {
+                  errorCode, // 错误码
+
+                  ip: params.ip,
+                  port: params.port,
+                  connectionId,
+
+                  slaveAddr: params.slaveAddr,
+                  regAddr: params.regAddr,
+                  regQuantity: params.regQuantity,
+                }
+              );
             },
 
           });
