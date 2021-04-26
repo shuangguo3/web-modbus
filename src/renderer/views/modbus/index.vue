@@ -2,7 +2,11 @@
 
   <div>
 
-    <el-tabs @tab-click="handleModbusConnectionClick">
+    <!--modbus连接tabs-->
+    <el-tabs
+      type="card"
+      @tab-click="handleModbusConnectionClick"
+    >
       <el-tab-pane
         label="连接日志"
         name="log"
@@ -37,6 +41,7 @@
         :name="connectionId"
       >
 
+        <!--搜索modbus地址form-->
         <el-form
           :inline="true"
           :model="modbusAddrModel"
@@ -59,37 +64,83 @@
           <el-form-item>
             <el-button
               type="primary"
-              @click="handleModbusAddrSearch"
+              :loading="isModbusAddrSearch"
+              @click="handleModbusAddrSearch(connection.ip, connection.port)"
             >开始查询</el-button>
           </el-form-item>
         </el-form>
 
-        <el-button
-          type="primary"
-          round
-          @click="handleReadHoldingRegisters"
-        >开始读寄存器</el-button>
-
-        <el-table
-          :data="regDatas[connection.ip]"
-          style="width: 100%"
+        <!--modbus地址tabs-->
+        <el-tabs
+          type="card"
+          @tab-click="handleModbusAddrClick"
         >
-          <el-table-column label="地址">
-            <template slot-scope="scope">
-              0x{{ scope.row.regAddr }}
-            </template>
-          </el-table-column>
-          <el-table-column label="16进制值">
-            <template slot-scope="scope">
-              0x{{ scope.row.valueOf16 }}
-            </template>
-          </el-table-column>
-          <el-table-column label="10进制值">
-            <template slot-scope="scope">
-              {{ scope.row.valueOf10 }}
-            </template>
-          </el-table-column>
-        </el-table>
+          <el-tab-pane
+            v-for="(item, addr) in modbusAddrTabList[connectionId]"
+            :key="addr"
+            :label="'地址'+addr"
+            :name="addr"
+          >
+            <el-button
+              type="primary"
+              @click="handleReadHoldingRegisters(connection.ip, connection.port, addr)"
+            >读保存寄存器</el-button>
+
+            <el-form
+              :inline="true"
+              :model="modbusWriteHoldingRegistersModel"
+              class="demo-form-inline"
+            >
+              <el-form-item label="寄存器地址">
+                <el-input
+                  v-model="modbusWriteHoldingRegistersModel.regAddr"
+                  placeholder="寄存器地址"
+                ></el-input>
+              </el-form-item>
+              <el-form-item label="寄存器值">
+                <el-input
+                  v-model="modbusWriteHoldingRegistersModel.regValue"
+                  placeholder="寄存器值"
+                ></el-input>
+              </el-form-item>
+              <el-form-item label="数量">
+                <el-input
+                  v-model="modbusWriteHoldingRegistersModel.regQuantity"
+                  placeholder="数量"
+                ></el-input>
+              </el-form-item>
+              <el-form-item>
+                <el-button
+                  type="primary"
+                  :loading="isModbusWriteHoldingRegisters"
+                  @click="handleWriteHoldingRegisters(connection.ip, connection.port, addr)"
+                >写保存寄存器</el-button>
+              </el-form-item>
+            </el-form>
+
+            <el-table
+              :data="regDatas[connectionId][addr]"
+              style="width: 100%"
+            >
+              <el-table-column label="地址">
+                <template slot-scope="scope">
+                  0x{{ scope.row.regAddr }}
+                </template>
+              </el-table-column>
+              <el-table-column label="16进制值">
+                <template slot-scope="scope">
+                  0x{{ scope.row.valueOf16 }}
+                </template>
+              </el-table-column>
+              <el-table-column label="10进制值">
+                <template slot-scope="scope">
+                  {{ scope.row.valueOf10 }}
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+        </el-tabs>
+
       </el-tab-pane>
 
     </el-tabs>
@@ -113,17 +164,37 @@ export default {
     return {
       //modbus只使用ip作为连接id
       isModbusOnlyIp: true,
-      modbusConnection: null,
 
+      // 是否正在搜索modbus地址中
+      isModbusAddrSearch: false,
+      //当前正在检查的modbus地址
       checkModbusSlaveAddr: null,
 
-      modbusConnectionTabList: null,
-      regDataList: {},
+      isModbusWriteHoldingRegisters: false,
+
+      // 当前modbus连接列表
+      modbusConnectionTabList: {},
+      // 当前modbus连接
+      //modbusConnection: null,
+
+      //当前modbus地址列表
+      modbusAddrTabList: {},
+      //当前modbus地址
+      //modbusAddr: null,
+
+      // 寄存器数据
+      regDataList: {}, //避免table数据重复的唯一列表
       regDatas: {},
 
       modbusAddrModel: {
         startAddr: 1,
         endAddr: 10,
+      },
+
+      modbusWriteHoldingRegistersModel: {
+        regAddr: '',
+        regValue: '',
+        regQuantity: '',
       },
 
       //网络通讯日志
@@ -149,17 +220,17 @@ export default {
           // 【重要】当前页面只使用ip作为connectionId
           if (this.isModbusOnlyIp) {
             if (!this.regDataList[modbusConnectionId]) {
-              this.regDataList[modbusConnection.ip] = {};
+              this.regDataList[modbusConnectionId] = {};
             }
             if (!this.regDatas[modbusConnectionId]) {
-              this.regDatas[modbusConnection.ip] = [];
+              this.regDatas[modbusConnectionId] = {};
             }
           } else {
             if (!this.regDataList[modbusConnectionId]) {
               this.regDataList[modbusConnectionId] = {};
             }
             if (!this.regDatas[modbusConnectionId]) {
-              this.regDatas[modbusConnectionId] = [];
+              this.regDatas[modbusConnectionId] = {};
             }
           }
         }
@@ -168,72 +239,100 @@ export default {
   },
 
   methods: {
-    testToken() {
-      this.$store.commit('SET_TOKEN', 'test111');
-    },
-
     // modbus连接tab点击切换
     handleModbusConnectionClick(tab, event) {
+      /*
       //console.log(tab, event);
       //console.log(tab.name, tab.label);
       if (tab.name === 'log') return;
       this.modbusConnection = this.modbusConnectionTabList[tab.name];
+      */
+    },
+
+    // modbus地址，tab点击切换
+    handleModbusAddrClick(tab, event) {
+      //
+      //this.modbusAddr = tab.name;
     },
 
     // 已有modbus连接下搜索存在的地址
-    handleModbusAddrSearch() {
-      // 在某个从机地址下，随意读取一个寄存器地址，如果读取超时，说明地址不存在
-      this.checkModbusSlaveAddr = this.modbusAddrModel.startAddr;
-      this.checkSlaveAddr(this.checkModbusSlaveAddr);
-    },
+    handleModbusAddrSearch(ip, port) {
+      console.log('handleModbusAddrSearch', ip, port);
 
-    handleReadHoldingRegisters() {
-      this.readHoldingRegisters({
-        slaveAddr: 0x01,
-        regAddr: 0x405,
-        regQuantity: 6,
-      });
+      // 在某个从机地址下，随意读取一个寄存器地址，如果读取超时，说明地址不存在
+      this.isModbusAddrSearch = true;
+      this.checkModbusSlaveAddr = this.modbusAddrModel.startAddr;
+      this.checkSlaveAddr(ip, port, this.checkModbusSlaveAddr);
     },
 
     //检查slave设备地址是否存在
-    checkSlaveAddr(slaveAddr) {
+    checkSlaveAddr(ip, port, slaveAddr) {
+      const params = this.getSlaveParams(ip, port, slaveAddr);
+      ipcRenderer.invoke('modbus', 'checkSlaveAddr', params);
+    },
+
+    // 读保存寄存器
+    handleReadHoldingRegisters(ip, port, slaveAddr) {
+      const params = this.getSlaveParams(ip, port, slaveAddr);
+      const modbusParams = {
+        regAddr: 0x405,
+        regQuantity: 36,
+      };
+      Object.assign(params, modbusParams);
+
+      ipcRenderer.invoke('modbus', 'readHoldingRegisters', params);
+    },
+
+    // 写保存寄存器
+    handleWriteHoldingRegisters(ip, port, slaveAddr) {
+      if (
+        !this.modbusWriteHoldingRegistersModel.regAddr ||
+        !this.modbusWriteHoldingRegistersModel.regValue ||
+        !this.modbusWriteHoldingRegistersModel.regQuantity
+      ) {
+        this.$alert('请输入寄存器内容', '输入异常', {
+          confirmButtonText: '确定',
+        });
+        return;
+      }
+
+      const params = this.getSlaveParams(ip, port, slaveAddr);
+      const modbusParams = {
+        regAddr: Number.parseInt(
+          this.modbusWriteHoldingRegistersModel.regAddr,
+          16
+        ),
+        regValue: Number.parseInt(
+          this.modbusWriteHoldingRegistersModel.regValue,
+          16
+        ),
+        regQuantity: Number.parseInt(
+          this.modbusWriteHoldingRegistersModel.regQuantity,
+          16
+        ),
+      };
+      Object.assign(params, modbusParams);
+
+      console.log('handleWriteHoldingRegisters', params);
+
+      ipcRenderer.invoke('modbus', 'writeHoldingRegisters', params);
+    },
+
+    // 获取slave通信参数，包括ip，port，addr
+    getSlaveParams(ip, port, slaveAddr) {
+      slaveAddr = Number(slaveAddr);
       const params = {
         slaveAddr,
       };
       // 【重要】当前页面只使用ip作为connectionId
       if (this.isModbusOnlyIp) {
-        params.connectionId = `${this.modbusConnection.ip}`;
-        params.ip = this.modbusConnection.ip;
+        params.connectionId = `${ip}`;
       } else {
-        params.connectionId = `${this.modbusConnection.ip}:${this.modbusConnection.port}`;
-        params.ip = this.modbusConnection.ip;
-        params.port = this.modbusConnection.port;
+        params.connectionId = `${ip}:${port}`;
       }
-
-      ipcRenderer.invoke('modbus', 'checkSlaveAddr', params);
-    },
-
-    // 读保存寄存器
-    readHoldingRegisters(modbusParams) {
-      /*
-      const params = {
-        slaveAddr: 0x01,
-        regAddr: 0x405,
-        regQuantity: 6,
-      };
-      */
-      const params = modbusParams;
-      // 【重要】当前页面只使用ip作为connectionId
-      if (this.isModbusOnlyIp) {
-        params.connectionId = `${this.modbusConnection.ip}`;
-        params.ip = this.modbusConnection.ip;
-      } else {
-        params.connectionId = `${this.modbusConnection.ip}:${this.modbusConnection.port}`;
-        params.ip = this.modbusConnection.ip;
-        params.port = this.modbusConnection.port;
-      }
-
-      ipcRenderer.invoke('modbus', 'readHoldingRegisters', params);
+      //params.ip = ip;
+      //params.port = port;
+      return params;
     },
   },
 
@@ -249,10 +348,12 @@ export default {
     ipcRenderer.on('modbus', (event, msg, params, requestInfo) => {
       console.log('modbus', msg, params, requestInfo);
 
-      let time, log, errorCode;
+      let time, log, errorCode, connectionId;
 
       if (requestInfo) {
         errorCode = requestInfo.errorCode;
+        // 获取完整的连接id，区别于requestInfo.connectionId（可能只有ip）
+        connectionId = `${requestInfo.ip}:${requestInfo.port}`;
       }
 
       switch (msg) {
@@ -263,18 +364,31 @@ export default {
             switch (errorCode) {
               // modbus busy，重新发送
               case modbusException.ConnectionBusy:
-                this.checkSlaveAddr(this.checkModbusSlaveAddr);
+                this.checkSlaveAddr(
+                  requestInfo.ip,
+                  requestInfo.port,
+                  this.checkModbusSlaveAddr
+                );
                 break;
 
               // 读取超时，表示地址不存在，继续检查下一个地址
               case modbusException.RequestTimeout:
                 this.checkModbusSlaveAddr++;
                 if (this.checkModbusSlaveAddr <= this.modbusAddrModel.endAddr) {
-                  this.checkSlaveAddr(this.checkModbusSlaveAddr);
+                  this.checkSlaveAddr(
+                    requestInfo.ip,
+                    requestInfo.port,
+                    this.checkModbusSlaveAddr
+                  );
+                } else {
+                  //搜索完毕，停止搜索地址
+                  this.isModbusAddrSearch = false;
                 }
                 break;
 
               default:
+                //其他异常，停止搜索地址
+                this.isModbusAddrSearch = false;
                 break;
             }
 
@@ -284,13 +398,36 @@ export default {
           // 当前地址ok
           console.log(
             '-----------slaveAddr ok---------',
-            requestInfo.slaveAddr
+            requestInfo.slaveAddr,
+            this.modbusAddrTabList,
+            this.regDataList,
+            this.regDatas
           );
+          // 保存地址信息
+
+          if (!this.modbusAddrTabList[connectionId]) {
+            this.modbusAddrTabList[connectionId] = {};
+          }
+          this.modbusAddrTabList[connectionId][requestInfo.slaveAddr] =
+            requestInfo.slaveAddr;
+          if (!this.regDataList[connectionId][requestInfo.slaveAddr]) {
+            this.regDataList[connectionId][requestInfo.slaveAddr] = {};
+          }
+          if (!this.regDatas[connectionId][requestInfo.slaveAddr]) {
+            this.regDatas[connectionId][requestInfo.slaveAddr] = [];
+          }
 
           // 继续检查下一个地址
           this.checkModbusSlaveAddr++;
           if (this.checkModbusSlaveAddr <= this.modbusAddrModel.endAddr) {
-            this.checkSlaveAddr(this.checkModbusSlaveAddr);
+            this.checkSlaveAddr(
+              requestInfo.ip,
+              requestInfo.port,
+              this.checkModbusSlaveAddr
+            );
+          } else {
+            //搜索完毕，停止搜索地址
+            this.isModbusAddrSearch = false;
           }
 
           break;
@@ -305,8 +442,10 @@ export default {
           }
 
           //regDataList = this.regDataList;
-          const regDatas = this.regDatas[requestInfo.connectionId];
-          const regDataList = this.regDataList[requestInfo.connectionId];
+          const regDatas = this.regDatas[connectionId][requestInfo.slaveAddr];
+          const regDataList = this.regDataList[connectionId][
+            requestInfo.slaveAddr
+          ];
 
           for (let regAddr in params) {
             const regValue = params[regAddr];

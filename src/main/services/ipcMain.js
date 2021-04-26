@@ -68,10 +68,10 @@ export default {
       console.log('ipcMain modbus', msg, params);
 
       const modbusTcp = global.modbusTcp;
-      let modbusRtu,
-        connectionId;
+      let modbusRtu;
 
       if (params) {
+        /*
         if (params.port) {
           connectionId = `${params.ip}:${params.port}`;
           modbusRtu = modbusTcp.rtuList[params.ip][params.port];
@@ -79,6 +79,8 @@ export default {
           connectionId = `${params.ip}`;
           modbusRtu = modbusTcp.rtuList[params.ip][0];
         }
+        */
+        modbusRtu = modbusTcp.rtuList[params.connectionId];
         if (!modbusRtu) {
           console.log('rtu not exist:', params.connectionId);
           return;
@@ -115,9 +117,9 @@ export default {
                   'onCheckSlaveAddr',
                   null,
                   {
-                    ip: params.ip,
-                    port: params.port,
-                    connectionId,
+                    ip: modbusRtu.ip,
+                    port: modbusRtu.port,
+                    connectionId: params.connectionId,
 
                     slaveAddr: params.slaveAddr,
                     regAddr: params.regAddr,
@@ -139,9 +141,9 @@ export default {
                 {
                   errorCode, // 错误码
 
-                  ip: params.ip,
-                  port: params.port,
-                  connectionId,
+                  ip: modbusRtu.ip,
+                  port: modbusRtu.port,
+                  connectionId: params.connectionId,
 
                   slaveAddr: params.slaveAddr,
                   regAddr: params.regAddr,
@@ -154,7 +156,10 @@ export default {
           });
           break;
 
+
         case 'readHoldingRegisters':
+
+          // 读保存寄存器
 
           // console.log('modbusRtu', modbusRtu);
 
@@ -179,9 +184,9 @@ export default {
                   regInfos, // 返回寄存器值列表
                   // 只返回可序列化的请求信息（去掉不可序列化的回调函数等），否则无法进行进程间调用
                   {
-                    ip: params.ip,
-                    port: params.port,
-                    connectionId,
+                    ip: modbusRtu.ip,
+                    port: modbusRtu.port,
+                    connectionId: params.connectionId,
 
                     slaveAddr: params.slaveAddr,
                     regAddr: params.regAddr,
@@ -204,8 +209,79 @@ export default {
                 {
                   errorCode, // 错误码
 
-                  ip: params.ip,
-                  port: params.port,
+                  ip: modbusRtu.ip,
+                  port: modbusRtu.port,
+                  connectionId: params.connectionId,
+
+                  slaveAddr: params.slaveAddr,
+                  regAddr: params.regAddr,
+                  regQuantity: params.regQuantity,
+                }
+              );
+            },
+
+          });
+          break;
+
+        case 'writeHoldingRegisters':
+
+          // 写保存寄存器
+
+          console.log('writeHoldingRegisters', params);
+
+          // 调用rtu的读取保存寄存器方法
+          modbusRtu.writeHoldingRegisters({
+            slaveAddr: params.slaveAddr,
+            regAddr: params.regAddr,
+            regValue: params.regValue,
+            regQuantity: params.regQuantity,
+            callback: (requestInfo) => {
+
+              /*
+              console.log('callback', requestInfo);
+              // 读取保存寄存器成功后，调用rtu的获取寄存器值方法（把本次获取的寄存器值放入列表），并在回调函数里把寄存器值发送给渲染进程
+              modbusRtu.getHoldingRegistersValue((regInfos) => {
+
+                console.log('modbusRtu.getHoldingRegistersValue regInfos', regInfos);
+
+                // 把寄存器值发送给渲染进程
+                global.windowList.mainWindow.webContents.send(
+                  'modbus',
+                  'onReadHoldingRegisters',
+                  // requestInfo,
+                  regInfos, // 返回寄存器值列表
+                  // 只返回可序列化的请求信息（去掉不可序列化的回调函数等），否则无法进行进程间调用
+                  {
+                    ip: modbusRtu.ip,
+                    port: modbusRtu.port,
+                    connectionId,
+
+                    slaveAddr: params.slaveAddr,
+                    regAddr: params.regAddr,
+                    regQuantity: params.regQuantity,
+                  }
+                );
+
+              });
+              */
+
+            },
+            errorCallback(errorCode, requestInfo) {
+
+              /*
+              console.log('errorCallback', errorCode, requestInfo);
+
+              // 把错误信息发送给渲染进程
+              global.windowList.mainWindow.webContents.send(
+                'modbus',
+                'onReadHoldingRegisters',
+                // requestInfo,
+                null,
+                {
+                  errorCode, // 错误码
+
+                  ip: modbusRtu.ip,
+                  port: modbusRtu.port,
                   connectionId,
 
                   slaveAddr: params.slaveAddr,
@@ -213,6 +289,8 @@ export default {
                   regQuantity: params.regQuantity,
                 }
               );
+              */
+
             },
 
           });
