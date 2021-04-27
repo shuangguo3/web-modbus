@@ -71,15 +71,7 @@ export default {
       let modbusRtu;
 
       if (params) {
-        /*
-        if (params.port) {
-          connectionId = `${params.ip}:${params.port}`;
-          modbusRtu = modbusTcp.rtuList[params.ip][params.port];
-        } else {
-          connectionId = `${params.ip}`;
-          modbusRtu = modbusTcp.rtuList[params.ip][0];
-        }
-        */
+
         modbusRtu = modbusTcp.rtuList[params.connectionId];
         if (!modbusRtu) {
           console.log('rtu not exist:', params.connectionId);
@@ -117,7 +109,7 @@ export default {
                   'onCheckSlaveAddr',
                   null,
                   {
-                    ip: modbusRtu.ip,
+                    host: modbusRtu.host,
                     port: modbusRtu.port,
                     connectionId: params.connectionId,
 
@@ -141,7 +133,7 @@ export default {
                 {
                   errorCode, // 错误码
 
-                  ip: modbusRtu.ip,
+                  host: modbusRtu.host,
                   port: modbusRtu.port,
                   connectionId: params.connectionId,
 
@@ -163,7 +155,7 @@ export default {
 
           // console.log('modbusRtu', modbusRtu);
 
-          // 调用rtu的读取保存寄存器方法
+          // 调用rtu的读保存寄存器方法
           modbusRtu.readHoldingRegisters({
             slaveAddr: params.slaveAddr,
             regAddr: params.regAddr,
@@ -171,7 +163,7 @@ export default {
             callback: (requestInfo) => {
 
               console.log('callback', requestInfo);
-              // 读取保存寄存器成功后，调用rtu的获取寄存器值方法（把本次获取的寄存器值放入列表），并在回调函数里把寄存器值发送给渲染进程
+              // 读保存寄存器成功后，调用rtu的获取寄存器值方法（把本次获取的寄存器值放入列表），并在回调函数里把寄存器值发送给渲染进程
               modbusRtu.getHoldingRegistersValue((regInfos) => {
 
                 console.log('modbusRtu.getHoldingRegistersValue regInfos', regInfos);
@@ -184,13 +176,15 @@ export default {
                   regInfos, // 返回寄存器值列表
                   // 只返回可序列化的请求信息（去掉不可序列化的回调函数等），否则无法进行进程间调用
                   {
-                    ip: modbusRtu.ip,
+                    host: modbusRtu.host,
                     port: modbusRtu.port,
                     connectionId: params.connectionId,
 
                     slaveAddr: params.slaveAddr,
                     regAddr: params.regAddr,
                     regQuantity: params.regQuantity,
+
+
                   }
                 );
 
@@ -200,7 +194,7 @@ export default {
             errorCallback(errorCode, requestInfo) {
               console.log('errorCallback', errorCode, requestInfo);
 
-              // 把错误信息发送给渲染进程
+              // 通知渲染进程，读取失败
               global.windowList.mainWindow.webContents.send(
                 'modbus',
                 'onReadHoldingRegisters',
@@ -209,13 +203,15 @@ export default {
                 {
                   errorCode, // 错误码
 
-                  ip: modbusRtu.ip,
+                  host: modbusRtu.host,
                   port: modbusRtu.port,
                   connectionId: params.connectionId,
 
                   slaveAddr: params.slaveAddr,
                   regAddr: params.regAddr,
                   regQuantity: params.regQuantity,
+
+
                 }
               );
             },
@@ -229,49 +225,48 @@ export default {
 
           console.log('writeHoldingRegisters', params);
 
-          // 调用rtu的读取保存寄存器方法
+          // 调用rtu的写保存寄存器方法
           modbusRtu.writeHoldingRegisters({
             slaveAddr: params.slaveAddr,
             regAddr: params.regAddr,
-            regValue: params.regValue,
             regQuantity: params.regQuantity,
+            regValue: params.regValue,
+            regValueBuf: params.regValueBuf,
+            options: params.options,
             callback: (requestInfo) => {
 
-              /*
+
               console.log('callback', requestInfo);
-              // 读取保存寄存器成功后，调用rtu的获取寄存器值方法（把本次获取的寄存器值放入列表），并在回调函数里把寄存器值发送给渲染进程
-              modbusRtu.getHoldingRegistersValue((regInfos) => {
 
-                console.log('modbusRtu.getHoldingRegistersValue regInfos', regInfos);
+              // 通知渲染进程，写入成功
+              global.windowList.mainWindow.webContents.send(
+                'modbus',
+                'onWriteHoldingRegisters',
+                // requestInfo,
+                null, // 返回寄存器值列表
+                // 只返回可序列化的请求信息（去掉不可序列化的回调函数等），否则无法进行进程间调用
+                {
+                  host: modbusRtu.host,
+                  port: modbusRtu.port,
+                  connectionId: params.connectionId,
 
-                // 把寄存器值发送给渲染进程
-                global.windowList.mainWindow.webContents.send(
-                  'modbus',
-                  'onReadHoldingRegisters',
-                  // requestInfo,
-                  regInfos, // 返回寄存器值列表
-                  // 只返回可序列化的请求信息（去掉不可序列化的回调函数等），否则无法进行进程间调用
-                  {
-                    ip: modbusRtu.ip,
-                    port: modbusRtu.port,
-                    connectionId,
+                  slaveAddr: params.slaveAddr,
+                  regAddr: params.regAddr,
+                  regQuantity: params.regQuantity,
+                  regValueBuf: params.regValueBuf,
 
-                    slaveAddr: params.slaveAddr,
-                    regAddr: params.regAddr,
-                    regQuantity: params.regQuantity,
-                  }
-                );
+                  requestBuf: requestInfo.requestBuf,
+                }
+              );
 
-              });
-              */
 
             },
             errorCallback(errorCode, requestInfo) {
 
-              /*
+
               console.log('errorCallback', errorCode, requestInfo);
 
-              // 把错误信息发送给渲染进程
+              // 通知渲染进程，写入失败
               global.windowList.mainWindow.webContents.send(
                 'modbus',
                 'onReadHoldingRegisters',
@@ -280,16 +275,18 @@ export default {
                 {
                   errorCode, // 错误码
 
-                  ip: modbusRtu.ip,
+                  host: modbusRtu.host,
                   port: modbusRtu.port,
-                  connectionId,
+                  connectionId: params.connectionId,
 
                   slaveAddr: params.slaveAddr,
                   regAddr: params.regAddr,
                   regQuantity: params.regQuantity,
+
+
                 }
               );
-              */
+
 
             },
 

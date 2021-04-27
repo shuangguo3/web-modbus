@@ -5,7 +5,7 @@ import initWindow from './services/windowManager';
 import DisableButton from './config/DisableButton';
 // import electronDevtoolsInstaller, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 
-import modbusMainInit from './services/modbus.js';
+import modbusMainInit from './services/modbusMainInit.js';
 
 // 定义全局变量，保存创建的窗口列表
 global.windowList = {};

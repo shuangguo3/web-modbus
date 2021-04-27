@@ -11,28 +11,28 @@ function modbusMainInit() {
   global.modbusTcp = new ModbusTcp({
 
     // 把已连接的所有connectionList发给渲染进程，避免丢失在渲染进程监听前收到的连接
-    onConnection(ip, port, connectionList) {
+    onConnection(host, port, connectionList) {
 
       console.log('modbusMainInit onConnection');
       global.windowList.mainWindow.webContents.send(
         'modbus',
         'onConnection',
         {
-          ip, port, connectionList,
+          host, port, connectionList,
         }
       );
 
     },
 
     // 把已连接的所有connectionList发给渲染进程，避免丢失掉在渲染进程监听前收到的连接
-    onEnd(ip, port, connectionList) {
+    onEnd(host, port, connectionList) {
 
       console.log('modbusMainInit onEnd');
       global.windowList.mainWindow.webContents.send(
         'modbus',
         'onEnd',
         {
-          ip, port, connectionList,
+          host, port, connectionList,
         }
       );
 
@@ -40,6 +40,9 @@ function modbusMainInit() {
   });
   // 必须先主动listen（作为server）或者connect（作为client）
   global.modbusTcp.listen(config.ModbusTcpListenPort);
+
+  // 作为client连接
+  // global.modbusTcp.connect('127.0.0.1', 502);
 
 }
 export default modbusMainInit;
