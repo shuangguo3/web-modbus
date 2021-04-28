@@ -116,6 +116,9 @@ export default {
                     slaveAddr: params.slaveAddr,
                     regAddr: params.regAddr,
                     regQuantity: params.regQuantity,
+
+                    requestBuf: requestInfo.requestBuf,
+                    responseBuf: requestInfo.responseBuf,
                   }
                 );
 
@@ -140,6 +143,9 @@ export default {
                   slaveAddr: params.slaveAddr,
                   regAddr: params.regAddr,
                   regQuantity: params.regQuantity,
+
+                  requestBuf: requestInfo.requestBuf,
+                  responseBuf: requestInfo.responseBuf,
                 }
               );
 
@@ -184,7 +190,8 @@ export default {
                     regAddr: params.regAddr,
                     regQuantity: params.regQuantity,
 
-
+                    requestBuf: requestInfo.requestBuf,
+                    responseBuf: requestInfo.responseBuf,
                   }
                 );
 
@@ -211,7 +218,8 @@ export default {
                   regAddr: params.regAddr,
                   regQuantity: params.regQuantity,
 
-
+                  requestBuf: requestInfo.requestBuf,
+                  responseBuf: requestInfo.responseBuf,
                 }
               );
             },
@@ -256,6 +264,7 @@ export default {
                   regValueBuf: params.regValueBuf,
 
                   requestBuf: requestInfo.requestBuf,
+                  responseBuf: requestInfo.responseBuf,
                 }
               );
 
@@ -269,7 +278,7 @@ export default {
               // 通知渲染进程，写入失败
               global.windowList.mainWindow.webContents.send(
                 'modbus',
-                'onReadHoldingRegisters',
+                'onWriteHoldingRegisters',
                 // requestInfo,
                 null,
                 {
@@ -283,6 +292,8 @@ export default {
                   regAddr: params.regAddr,
                   regQuantity: params.regQuantity,
 
+                  requestBuf: requestInfo.requestBuf,
+                  responseBuf: requestInfo.responseBuf,
 
                 }
               );

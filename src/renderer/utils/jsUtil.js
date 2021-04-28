@@ -150,28 +150,35 @@ export default {
     second = second < 10 ? '0' + second : second;
     const milliseconds = date.getMilliseconds();
 
-    let time = `${year}-${month}-${day}`;
+    const dateStr = `${year}-${month}-${day}`;
 
     // 默认显示 年-月-日 小时:分钟:秒 ，可根据选项修改显示内容
 
     // 不需要显示时间
     if (options.isNotShowTime) {
-      return time;
+      return dateStr;
     }
-    time = time + ` ${hour}:${minute}`;
+
+    let timeStr = ` ${hour}:${minute}`;
 
     // 不需要显示秒
     if (options.isNotShowSecond) {
-      return time;
+      return `${dateStr} ${timeStr}`;
     }
-    time = time + `:${second}`;
+    timeStr = timeStr + `:${second}`;
 
     // 需要显示毫秒
     if (options.isShowMilliSecond) {
-      time = time + `:${milliseconds}`;
+      timeStr = timeStr + `:${milliseconds}`;
+      return `${dateStr} ${timeStr}`;
     }
 
-    return time;
+    // 不需要显示日期
+    if (options.isNotShowDate) {
+      return timeStr;
+    }
+
+    return `${dateStr} ${timeStr}`;
   },
 
   /*
