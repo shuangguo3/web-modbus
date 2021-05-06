@@ -7,23 +7,27 @@ import { ipcRenderer } from 'electron';
 
 function modbusRenderInit(vueInstance) {
   console.log('store modbus');
+
+  // 处理全局的modbus事件
   ipcRenderer.on('modbus', (event, msg, params) => {
     console.log('modbus', msg, params); // Prints 'whoooooooh!'
 
     let log,
+      serverPort,
       connectionId,
       connectionList;
     switch (msg) {
 
       // 客户端close
-      case 'onEnd':
+      case 'onClose':
 
         connectionList = params.connectionList;
         connectionId = `${params.ip}:${params.port}`;
         log = `${connectionId} closed`;
         console.log(log);
 
-        vueInstance.$store.dispatch('closeConnection', { connectionList });
+        // vuex modbus 没有命名空间，namespaced: false
+        vueInstance.$store.dispatch('modbusConnection', { connectionList });
         break;
 
       // 客户端已连接
@@ -34,9 +38,23 @@ function modbusRenderInit(vueInstance) {
         log = `${connectionId} connected`;
         console.log(log);
 
-        // 设置store的connectionList
-        vueInstance.$store.dispatch('newConnection', { connectionList });
+        // vuex modbus 没有命名空间，namespaced: false
+        vueInstance.$store.dispatch('modbusConnection', { connectionList });
 
+        break;
+
+      // server 启动成功
+      case 'onStartServer':
+
+        serverPort = params.serverPort;
+        // vuex modbus 没有命名空间，namespaced: false
+        vueInstance.$store.dispatch('modbusServer', { serverPort });
+        break;
+
+      // server已关闭
+      case 'onCloseServer':
+        // vuex modbus 没有命名空间，namespaced: false
+        vueInstance.$store.dispatch('modbusServer', { serverPort: null });
         break;
 
       default:

@@ -79,7 +79,39 @@ export default {
         }
       }
 
+      const serverPort = 7777;
+
       switch (msg) {
+
+        // 启动server
+        case 'startServer':
+
+          modbusTcp.listen(serverPort, () => {
+
+            global.windowList.mainWindow.webContents.send(
+              'modbus',
+              'onStartServer',
+              { serverPort }
+            );
+
+          });
+          break;
+
+        // clse server
+        case 'closeServer':
+          modbusTcp.closeServer(() => {
+
+            global.windowList.mainWindow.webContents.send(
+              'modbus',
+              'onCloseServer'
+            );
+
+          });
+          break;
+
+        // 获取server状态
+        case 'getServerStatus':
+          return modbusTcp.serverPort;
 
         // 获取连接列表
         case 'getConnectionList':

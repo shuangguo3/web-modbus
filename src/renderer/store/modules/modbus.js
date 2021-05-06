@@ -5,28 +5,28 @@ const modbus = {
   state: {
     // 需要先主动去读取一次modbus connectionList，避免丢失渲染进程启动监听前的连接
     connectionList: {},
+    serverPort: null,
   },
   mutations: {
-    newConnection: (state, connectionList) => {
-
+    modbusConnection: (state, connectionList) => {
       state.connectionList = connectionList;
-      console.log('mutations newConnection', state.connectionList);
+      console.log('mutations modbusConnection', state.connectionList);
     },
-    closeConnection: (state, connectionList) => {
-      state.connectionList = connectionList;
-      console.log('mutations closeConnection', state.connectionList);
+    modbusServer: (state, serverPort) => {
+      state.serverPort = serverPort;
+      console.log('mutations modbusServer', state.serverPort);
     },
-
   },
   actions: {
-    newConnection: ({ commit }, { connectionList }) => {
-      console.log('action newConnection', connectionList);
-      commit('newConnection', connectionList);
+    modbusConnection: ({ commit }, { connectionList }) => {
+      console.log('action modbusConnection', connectionList);
+      commit('modbusConnection', connectionList);
     },
-    closeConnection({ commit }, { connectionList }) {
-      console.log('action closeConnection', connectionList);
-      commit('closeConnection', connectionList);
+    modbusServer: ({ commit }, { serverPort }) => {
+      console.log('action modbusConnection', serverPort);
+      commit('modbusServer', serverPort);
     },
+
 
   },
 };
