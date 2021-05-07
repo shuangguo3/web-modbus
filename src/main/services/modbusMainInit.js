@@ -3,6 +3,8 @@
  */
 
 // import config from '@config';
+import Store from 'electron-store';
+
 const ModbusTcp = require('../../modbus/tcp');
 
 // modbus在主进程内的初始化
@@ -53,11 +55,17 @@ function modbusMainInit() {
     },
   });
 
+  // 默认端口值
+  let serverPort = 7777;
+  const electronStore = new Store();
+  if (electronStore.has('modbus.serverPort')) {
+    serverPort = electronStore.get('modbus.serverPort');
+  } else {
+    electronStore.set('modbus.serverPort', serverPort);
+  }
 
-  const serverPort = 7777;
   // 必须先主动listen（作为server）或者connect（作为client）
   global.modbusTcp.listen(serverPort, () => {
-    //
 
     console.log('listen success');
     global.windowList.mainWindow.webContents.send(
@@ -69,7 +77,12 @@ function modbusMainInit() {
   });
 
   // 作为client连接
-  // global.modbusTcp.connect('127.0.0.1', 502);
+  /*
+  global.modbusTcp.connect({
+    host: '127.0.0.1',
+    port: 502,
+  });
+  */
 
 }
 export default modbusMainInit;

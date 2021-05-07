@@ -7,10 +7,15 @@ import DisableButton from './config/DisableButton';
 
 import modbusMainInit from './services/modbusMainInit.js';
 
+import Store from 'electron-store';
+
 // 定义全局变量，保存创建的窗口列表
 global.windowList = {};
 
 async function onAppReady() {
+
+  // 设置store实例可用于渲染进程
+  Store.initRenderer();
 
   modbusMainInit();
 

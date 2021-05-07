@@ -2,7 +2,9 @@ import { ipcMain, dialog, BrowserWindow } from 'electron';
 import Server from '../server/index';
 import { winURL } from '../config/StaticPath';
 
-const ModbusRtu = require('../../modbus/rtu.js');
+import Store from 'electron-store';
+
+const electronStore = new Store();
 
 export default {
   Mainfunc(mainWindow, IsUseSysTitle) {
@@ -70,7 +72,7 @@ export default {
       const modbusTcp = global.modbusTcp;
       let modbusRtu;
 
-      if (params) {
+      if (params && params.connectionId) {
 
         modbusRtu = modbusTcp.rtuList[params.connectionId];
         if (!modbusRtu) {
@@ -79,12 +81,15 @@ export default {
         }
       }
 
-      const serverPort = 7777;
+      let serverPort;
 
       switch (msg) {
 
         // 启动server
         case 'startServer':
+
+
+          serverPort = electronStore.get('modbus.serverPort');
 
           modbusTcp.listen(serverPort, () => {
 
@@ -97,7 +102,7 @@ export default {
           });
           break;
 
-        // clse server
+        // close server
         case 'closeServer':
           modbusTcp.closeServer(() => {
 
@@ -106,6 +111,21 @@ export default {
               'onCloseServer'
             );
 
+          });
+          break;
+
+        // 以client模式连接server
+        case 'connect':
+
+          modbusTcp.connect({
+            host: params.host,
+            port: params.port,
+            callback: () => {
+              global.windowList.mainWindow.webContents.send(
+                'modbus',
+                'onConnect'
+              );
+            },
           });
           break;
 

@@ -1,8 +1,8 @@
 {
-  "name": "electron-vue-admin",
+  "name": "web-modbus",
   "version": "0.0.1",
-  "author": "sky <https://github.com/umbrella22>",
-  "description": "An electron-vue project",
+  "author": "xiashuang <https://github.com/shuangguo3>",
+  "description": "An electron-vue modbus project",
   "license": "MIT",
   "main": "./dist/electron/main.js",
   "scripts": {
@@ -29,8 +29,8 @@
         "url": "http://127.0.0.1"
       }
     ],
-    "productName": "electron-vue-admin",
-    "appId": "org.simulatedgreg.electron-vue",
+    "productName": "web-modbus",
+    "appId": "web.modbus.electron-vue",
     "directories": {
       "output": "build"
     },
@@ -56,7 +56,7 @@
       "icon": "build/icons/icon.icns"
     },
     "win": {
-      "icon": "build/icons/icon.ico",
+      "icon": "build/icons/modbus.ico",
       "target": "nsis"
     },
     "linux": {
@@ -67,12 +67,11 @@
   "dependencies": {
     "axios": "^0.21.1",
     "date-fns": "^2.19.0",
+    "electron-store": "^8.0.0",
     "electron-updater": "^4.3.8",
     "element-ui": "^2.15.1",
     "express": "^4.17.1",
     "fs-extra": "^9.1.0",
-    "modbus-pdu": "^1.13.1",
-    "modbus-stream": "^0.46.0",
     "nprogress": "^0.2.0",
     "prettier": "^2.2.1",
     "vue": "^2.6.12",

@@ -181,6 +181,17 @@ export default {
     return `${dateStr} ${timeStr}`;
   },
 
+  mkdirsSync(dirname) {
+    const fs = require('fs');
+    const path = require('path');
+    if (fs.existsSync(dirname)) return true;
+    if (this.mkdirsSync(path.dirname(dirname))) {
+      fs.mkdirSync(dirname);
+      return true;
+    }
+  },
+
+
   /*
   hexToString(hex) {
     return hex.toString(16);
