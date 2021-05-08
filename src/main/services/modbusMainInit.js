@@ -64,6 +64,7 @@ function modbusMainInit() {
     electronStore.set('modbus.serverPort', serverPort);
   }
 
+  /*
   // 必须先主动listen（作为server）或者connect（作为client）
   global.modbusTcp.listen(serverPort, () => {
 
@@ -75,6 +76,7 @@ function modbusMainInit() {
     );
 
   });
+  */
 
   // 作为client连接
   /*

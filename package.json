@@ -56,7 +56,7 @@
       "icon": "build/icons/icon.icns"
     },
     "win": {
-      "icon": "build/icons/modbus.ico",
+      "icon": "build/icons/modbus_256.ico",
       "target": "nsis"
     },
     "linux": {

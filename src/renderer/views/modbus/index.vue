@@ -1,342 +1,400 @@
 <template>
 
-  <el-container class="container">
+  <div>
 
-    <el-main>
-      <!--modbus连接tabs-->
-      <el-tabs
-        type="card"
-        @tab-click="handleModbusConnectionClick"
-        value="connect"
-      >
-        <el-tab-pane
-          label="连接设置"
-          name="connect"
+    <el-container class="container">
+
+      <el-main>
+        <!--modbus连接tabs-->
+        <el-tabs
+          type="card"
+          @tab-click="handleModbusConnectionClick"
+          value="connect"
         >
+          <el-tab-pane
+            label="连接设置"
+            name="connect"
+          >
 
-          <div class="padding">
-            <ul>
-              <li><b>使用说明</b></li>
-              <li>使用Modbus RTU Over Tcp/Ip方式进行通讯</li>
-              <li>以modbus主站的身份通讯，通过rtu协议向modbus网关连接的从站设备下发指令</li>
-              <li>组网方式：当前程序主机通过网口连接到modbu网关（串口服务器），modbu网关通过485连接多个从站设备</li>
-              <li>使用tcp信道作为modbus通讯信道，可同时以server和client模式建立tcp连接</li>
-              <li>以server或client模式建立tcp连接后，即可在此连接上进行不间断的modbus通讯</li>
-            </ul>
+            <div class="padding">
+              <ul>
+                <li><b>使用说明</b></li>
+                <li>使用Modbus RTU Over Tcp/Ip方式进行通讯</li>
+                <li>以modbus主站的身份通讯，通过rtu协议向modbus网关连接的从站设备下发指令</li>
+                <li>组网方式：当前程序主机通过网口连接到modbu网关（串口服务器），modbu网关通过485连接多个从站设备</li>
+                <li>使用tcp信道作为modbus通讯信道，可同时以server和client模式建立tcp连接</li>
+                <li>以server或client模式建立tcp连接后，即可在此连接上进行不间断的modbus通讯</li>
+              </ul>
 
-            <el-tabs
-              type="card"
-              value="server"
-            >
-              <el-tab-pane
-                label="server模式"
-                name="server"
+              <el-tabs
+                type="card"
+                value="server"
               >
+                <el-tab-pane
+                  label="server模式"
+                  name="server"
+                >
 
-                <el-button
-                  type="primary"
-                  :loading="isHandleExportFile"
-                  @click="handleExportFile"
-                >导出文件</el-button>
+                  <div style="padding: 15px; margin-top:20px; border:1px solid #ccc;">
+                    <span
+                      style="color:#67C23A"
+                      v-if="modbusServerPort!=null"
+                    >server已启动，正在监听{{modbusServerPort}}端口</span>
+                    <span
+                      style="color:#909399"
+                      v-else
+                    >server未启动</span>
+                    <el-button
+                      style="margin-left:20px;"
+                      type="primary"
+                      size="small"
+                      :loading="isHandleModbusServer"
+                      @click="handleModbusServer"
+                    >{{modbusServerPort!=null?'关闭server':'启动server'}}</el-button>
+                  </div>
 
-                <div style="padding: 15px; margin-top:20px; border:1px solid #eee;">
-                  <span
-                    style="color:#67C23A"
-                    v-if="modbusServerPort!=null"
-                  >server已启动，正在监听{{modbusServerPort}}端口</span>
-                  <span
-                    style="color:#909399"
-                    v-else
-                  >server未启动</span>
-                  <el-button
-                    style="margin-left:20px;"
-                    type="primary"
-                    size="small"
-                    :loading="isHandleModbusServer"
-                    @click="handleModbusServer"
-                  >{{modbusServerPort!=null?'关闭server':'启动server'}}</el-button>
-                </div>
+                  <div style="padding: 15px 15px 0; margin-top:20px; border:1px solid #ccc;">
+                    <el-form
+                      :inline="true"
+                      :model="modbusServerModel"
+                      size="small"
+                    >
+                      <el-form-item label="server端口">
+                        <el-input
+                          style="width:100px"
+                          v-model="modbusServerModel.serverPort"
+                          placeholder="server端口"
+                          :value="modbusServerModel.serverPort"
+                        ></el-input>
+                      </el-form-item>
+                      <el-form-item>
+                        <el-button
+                          type="primary"
+                          @click="handleModbusServerPort"
+                        >修改server端口</el-button>
+                      </el-form-item>
+                    </el-form>
+                  </div>
 
-                <div style="padding: 15px 15px 0; margin-top:20px; border:1px solid #eee;">
+                </el-tab-pane>
+
+                <el-tab-pane
+                  label="client模式"
+                  name="client"
+                >
+
                   <el-form
                     :inline="true"
-                    :model="modbusServerModel"
+                    :model="modbusClientModel"
                     size="small"
                   >
+                    <el-form-item label="server地址">
+                      <el-input
+                        style="width:200px"
+                        v-model="modbusClientModel.host"
+                        placeholder="server地址"
+                        :value="modbusClientModel.host"
+                      ></el-input>
+                    </el-form-item>
                     <el-form-item label="server端口">
                       <el-input
                         style="width:100px"
-                        v-model="modbusServerModel.serverPort"
+                        v-model="modbusClientModel.port"
                         placeholder="server端口"
-                        :value="modbusServerModel.serverPort"
+                        :value="modbusClientModel.port"
                       ></el-input>
                     </el-form-item>
                     <el-form-item>
                       <el-button
                         type="primary"
-                        @click="handleModbusServerPort"
-                      >修改server端口</el-button>
+                        :loading="isHandleModbusConnect"
+                        @click="handleModbusConnect"
+                      >连接</el-button>
                     </el-form-item>
                   </el-form>
-                </div>
+                </el-tab-pane>
+              </el-tabs>
 
-              </el-tab-pane>
+            </div>
 
-              <el-tab-pane
-                label="client模式"
-                name="client"
+          </el-tab-pane>
+
+          <el-tab-pane
+            v-for="(connection, connectionId) in modbusConnectionTabList"
+            :key="connectionId"
+            :label="connectionId"
+            :name="connectionId"
+          >
+
+            <!--搜索modbus地址form-->
+            <div class="padding">
+
+              <el-form
+                :inline="true"
+                :model="modbusAddrModel"
+                size="small"
               >
+                <el-form-item label="从机起始地址">
+                  <el-input
+                    style="width:100px"
+                    v-model="modbusAddrModel.startAddr"
+                    placeholder="起始地址"
+                    :value="modbusAddrModel.startAddr"
+                  ></el-input>
+                </el-form-item>
+                <el-form-item label="从机结束地址">
+                  <el-input
+                    style="width:100px"
+                    v-model="modbusAddrModel.endAddr"
+                    placeholder="结束地址"
+                    :value="modbusAddrModel.endAddr"
+                  ></el-input>
+                </el-form-item>
+                <el-form-item>
+                  <el-button
+                    type="primary"
+                    :loading="isModbusAddrSearch"
+                    @click="handleModbusAddrSearch(connection.host, connection.port)"
+                  >查询地址</el-button>
+                </el-form-item>
+              </el-form>
 
-                <el-form
-                  :inline="true"
-                  :model="modbusClientModel"
-                  size="small"
+              <!--modbus地址tabs-->
+              <el-tabs
+                type="card"
+                :value="modbusAddrTabActList[connectionId]"
+                @tab-click="handleModbusAddrClick"
+              >
+                <el-tab-pane
+                  v-for="(item, addr) in modbusAddrTabList[connectionId]"
+                  :key="addr"
+                  :label="'地址'+addr"
+                  :name="addr"
                 >
-                  <el-form-item label="server地址">
-                    <el-input
-                      style="width:200px"
-                      v-model="modbusClientModel.host"
-                      placeholder="server地址"
-                      :value="modbusClientModel.host"
-                    ></el-input>
-                  </el-form-item>
-                  <el-form-item label="server端口">
-                    <el-input
-                      style="width:100px"
-                      v-model="modbusClientModel.port"
-                      placeholder="server端口"
-                      :value="modbusClientModel.port"
-                    ></el-input>
-                  </el-form-item>
-                  <el-form-item>
-                    <el-button
-                      type="primary"
-                      :loading="isHandleModbusConnect"
-                      @click="handleModbusConnect"
-                    >连接</el-button>
-                  </el-form-item>
-                </el-form>
-              </el-tab-pane>
-            </el-tabs>
 
-          </div>
-
-        </el-tab-pane>
-
-        <el-tab-pane
-          v-for="(connection, connectionId) in modbusConnectionTabList"
-          :key="connectionId"
-          :label="connectionId"
-          :name="connectionId"
-        >
-
-          <!--搜索modbus地址form-->
-          <div class="padding">
-
-            <el-form
-              :inline="true"
-              :model="modbusAddrModel"
-              size="small"
-            >
-              <el-form-item label="从机起始地址">
-                <el-input
-                  style="width:100px"
-                  v-model="modbusAddrModel.startAddr"
-                  placeholder="起始地址"
-                  :value="modbusAddrModel.startAddr"
-                ></el-input>
-              </el-form-item>
-              <el-form-item label="从机结束地址">
-                <el-input
-                  style="width:100px"
-                  v-model="modbusAddrModel.endAddr"
-                  placeholder="结束地址"
-                  :value="modbusAddrModel.endAddr"
-                ></el-input>
-              </el-form-item>
-              <el-form-item>
-                <el-button
-                  type="primary"
-                  :loading="isModbusAddrSearch"
-                  @click="handleModbusAddrSearch(connection.host, connection.port)"
-                >查询地址</el-button>
-              </el-form-item>
-            </el-form>
-
-            <!--modbus地址tabs-->
-            <el-tabs
-              type="card"
-              :value="modbusAddrTabActList[connectionId]"
-              @tab-click="handleModbusAddrClick"
-            >
-              <el-tab-pane
-                v-for="(item, addr) in modbusAddrTabList[connectionId]"
-                :key="addr"
-                :label="'地址'+addr"
-                :name="addr"
-              >
-
-                <!--读写tabs-->
-                <div class="padding">
-
-                  <el-tabs
-                    type="card"
-                    value="holdingRegisters"
-                  >
-
-                    <el-tab-pane
-                      label="保存寄存器"
-                      name="holdingRegisters"
-                    >
-
-                      <el-form
-                        :inline="true"
-                        size="small"
-                        :model="modbusHoldingRegistersModel"
-                      >
-                        <el-form-item label="地址（16进制）">
-                          <el-input
-                            style="width:80px"
-                            v-model="modbusHoldingRegistersModel.regAddr"
-                            placeholder="地址"
-                          ></el-input>
-                        </el-form-item>
-
-                        <el-form-item label="数量（10进制）">
-                          <el-input
-                            style="width:80px"
-                            v-model="modbusHoldingRegistersModel.regQuantity"
-                            placeholder="数量"
-                          ></el-input>
-                        </el-form-item>
-
-                        <el-form-item
-                          v-if="(modbusFC === '0xf0' || modbusFC === '0x10')"
-                          label="写入值（16进制）"
-                        >
-                          <el-input
-                            style="width:80px"
-                            v-model="modbusHoldingRegistersModel.regValue"
-                            placeholder="值"
-                          ></el-input>
-                        </el-form-item>
-
-                        <el-form-item>
-                          <el-select
-                            style="width:150px"
-                            v-model="modbusFC"
-                            placeholder="请选择"
-                          >
-                            <el-option
-                              label="03 读多个寄存器"
-                              value="0x03"
-                            />
-                            <el-option
-                              label="10 写多个寄存器"
-                              value="0x10"
-                            />
-                          </el-select>
-                          <el-button
-                            type="primary"
-                            :loading="isHandleModbusHoldingRegisters"
-                            @click="handleHoldingRegisters(connection.host, connection.port, addr)"
-                          >下发命令</el-button>
-                        </el-form-item>
-
-                        <br />
-                        <el-form-item>
-                          <el-checkbox
-                            v-show="modbusFC == '0x10'"
-                            label="高级选项"
-                            v-model="modbusHoldingRegistersModel.isShowAdvance"
-                          ></el-checkbox>
-                        </el-form-item>
-                        <el-form-item v-show="modbusFC == '0x10' && modbusHoldingRegistersModel.isShowAdvance">
-                          <el-tooltip
-                            effect="dark"
-                            content="当写入多个值时，随着地址递增，寄存器值也以写入值为基准递增，如果寄存器值需要跳过 A~F 的16进制值，就勾选此项"
-                            placement="bottom-start"
-                          >
-                            <el-checkbox
-                              label="寄存器值跳过16进制"
-                              v-model="modbusHoldingRegistersModel.options.isSkip16"
-                            ></el-checkbox>
-                          </el-tooltip>
-                          <el-tooltip
-                            effect="dark"
-                            content="某些小厂家的modbus实现有bug，所以modbus响应只简单检查slave地址，功能码等，如果要严格按照modbus协议检查响应，就勾选此项"
-                            placement="bottom-start"
-                          >
-                            <el-checkbox
-                              label="严格检查modbus响应"
-                              v-model="modbusHoldingRegistersModel.options.isCheckResponse"
-                            ></el-checkbox>
-                          </el-tooltip>
-
-                        </el-form-item>
-                      </el-form>
-
-                    </el-tab-pane>
-
-                  </el-tabs>
-
+                  <!--读写tabs-->
                   <div class="padding">
-                    <el-table
-                      border
-                      :data="regDatas[connectionId][addr]"
-                      style="width: 100%"
+
+                    <el-tabs
+                      type="card"
+                      value="holdingRegisters"
                     >
-                      <el-table-column label="寄存器地址">
-                        <template slot-scope="scope">
-                          0x{{ scope.row.regAddr }}
-                        </template>
-                      </el-table-column>
-                      <el-table-column label="16进制值">
-                        <template slot-scope="scope">
-                          0x{{ scope.row.valueOf16 }}
-                        </template>
-                      </el-table-column>
-                      <el-table-column label="10进制值">
-                        <template slot-scope="scope">
-                          {{ scope.row.valueOf10 }}
-                        </template>
-                      </el-table-column>
-                    </el-table>
+
+                      <el-tab-pane
+                        label="保存寄存器"
+                        name="holdingRegisters"
+                      >
+
+                        <el-form
+                          :inline="true"
+                          size="small"
+                          :model="holdingRegistersModel"
+                        >
+                          <el-form-item label="地址（16进制）">
+                            <el-input
+                              style="width:80px"
+                              v-model="holdingRegistersModel.regAddr"
+                              placeholder="地址"
+                            ></el-input>
+                          </el-form-item>
+
+                          <el-form-item label="数量（10进制）">
+                            <el-input
+                              style="width:80px"
+                              v-model="holdingRegistersModel.regQuantity"
+                              placeholder="数量"
+                            ></el-input>
+                          </el-form-item>
+
+                          <el-form-item
+                            v-if="(modbusFC === '0xf0' || modbusFC === '0x10')"
+                            label="写入值（16进制）"
+                          >
+                            <el-input
+                              style="width:80px"
+                              v-model="holdingRegistersModel.regValue"
+                              placeholder="值"
+                            ></el-input>
+                          </el-form-item>
+
+                          <el-form-item>
+                            <el-select
+                              style="width:170px"
+                              v-model="modbusFC"
+                              placeholder="请选择"
+                            >
+                              <el-option
+                                label="03 读多个寄存器"
+                                value="0x03"
+                              />
+                              <el-option
+                                label="10 写多个寄存器"
+                                value="0x10"
+                              />
+                              <el-option
+                                label="导出寄存器值到文件"
+                                value="export"
+                              />
+                            </el-select>
+                            <el-button
+                              type="primary"
+                              :loading="isHandleModbusHoldingRegisters"
+                              @click="handleHoldingRegisters(connection.host, connection.port, addr)"
+                            >下发命令</el-button>
+                          </el-form-item>
+
+                          <br />
+                          <el-form-item>
+                            <el-checkbox
+                              v-show="modbusFC == '0x10'"
+                              label="高级选项"
+                              v-model="holdingRegistersModel.isShowAdvance"
+                            ></el-checkbox>
+                          </el-form-item>
+                          <el-form-item v-show="modbusFC == '0x10' && holdingRegistersModel.isShowAdvance">
+                            <el-tooltip
+                              effect="dark"
+                              content="当写入多个值时，随着地址递增，寄存器值也以写入值为基准递增，如果寄存器值需要跳过 A~F 的16进制值，就勾选此项"
+                              placement="bottom-start"
+                            >
+                              <el-checkbox
+                                label="寄存器值跳过16进制"
+                                v-model="holdingRegistersModel.options.isSkip16"
+                              ></el-checkbox>
+                            </el-tooltip>
+                            <el-tooltip
+                              effect="dark"
+                              content="某些小厂家的modbus实现有bug，所以modbus响应只简单检查slave地址，功能码等，如果要严格按照modbus协议检查响应，就勾选此项"
+                              placement="bottom-start"
+                            >
+                              <el-checkbox
+                                label="严格检查modbus响应"
+                                v-model="holdingRegistersModel.options.isCheckResponse"
+                              ></el-checkbox>
+                            </el-tooltip>
+
+                          </el-form-item>
+                        </el-form>
+
+                      </el-tab-pane>
+
+                    </el-tabs>
+
+                    <div class="padding">
+                      <el-table
+                        border
+                        :data="regDatas[connectionId][addr]"
+                        style="width: 100%"
+                      >
+                        <el-table-column label="寄存器地址">
+                          <template slot-scope="scope">
+                            0x{{ scope.row.regAddr }}
+                          </template>
+                        </el-table-column>
+                        <el-table-column label="16进制值">
+                          <template slot-scope="scope">
+                            0x{{ scope.row.valueOf16 }}
+                          </template>
+                        </el-table-column>
+                        <el-table-column label="10进制值">
+                          <template slot-scope="scope">
+                            {{ scope.row.valueOf10 }}
+                          </template>
+                        </el-table-column>
+                      </el-table>
+                    </div>
+
                   </div>
 
-                </div>
+                </el-tab-pane>
+              </el-tabs>
 
-              </el-tab-pane>
-            </el-tabs>
+            </div>
 
-          </div>
+          </el-tab-pane>
 
-        </el-tab-pane>
+        </el-tabs>
+      </el-main>
 
-      </el-tabs>
-    </el-main>
+      <el-aside
+        width="400px"
+        class="log-sidebar"
+      >
+        <el-scrollbar class="scrollbar-wrapper">
+          <el-table
+            :data="logDatas"
+            style="width: 100%"
+          >
+            <el-table-column label="日志">
+              <template slot-scope="scope">
+                <div v-if="scope.row.time">{{ scope.row.time }}</div>
+                <div v-if="scope.row.log">{{ scope.row.log }}</div>
+                <div v-if="scope.row.requestStr">{{ scope.row.requestStr }}</div>
+                <div v-if="scope.row.responseStr">{{ scope.row.responseStr }}</div>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-scrollbar>
+      </el-aside>
+    </el-container>
 
-    <el-aside
-      width="400px"
-      class="log-sidebar"
+    <el-dialog
+      title="导出文件"
+      :close-on-click-modal="false"
+      :before-close="handleCloseExportDialog"
+      :visible.sync="isExportHoldingRegistersDialogVisible"
     >
-      <el-scrollbar class="scrollbar-wrapper">
-        <el-table
-          :data="logDatas"
-          style="width: 100%"
-        >
-          <el-table-column label="日志">
-            <template slot-scope="scope">
-              <div v-if="scope.row.time">{{ scope.row.time }}</div>
-              <div v-if="scope.row.log">{{ scope.row.log }}</div>
-              <div v-if="scope.row.requestStr">{{ scope.row.requestStr }}</div>
-              <div v-if="scope.row.responseStr">{{ scope.row.responseStr }}</div>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-scrollbar>
-    </el-aside>
-  </el-container>
+      <el-form
+        :model="HoldingRegistersExportModel"
+        size="small"
+      >
+
+        <el-form-item>
+          <el-alert
+            title="把寄存器值导出到文件中"
+            type="success"
+          >
+          </el-alert>
+        </el-form-item>
+
+        <el-form-item label="寄存器起始地址（16进制）">
+          <el-input
+            v-model="HoldingRegistersExportModel.startRegAddr"
+            autocomplete="off"
+            placeholder="起始地址"
+          ></el-input>
+        </el-form-item>
+
+        <el-form-item label="寄存器结束地址（16进制）">
+          <el-input
+            v-model="HoldingRegistersExportModel.endRegAddr"
+            autocomplete="off"
+            placeholder="结束地址"
+          ></el-input>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button
+            type="primary"
+            :icon="isExportingFile?'el-icon-loading':''"
+            @click="handleExportFile"
+          >{{isExportingFile?'停止导出':'开始导出'}}</el-button>
+        </el-form-item>
+
+        <el-form-item>
+          导出文件路径：{当前执行程序路径}/export/holdingRegister/{起始地址}_{结束地址}_{导出时间}.txt
+        </el-form-item>
+
+      </el-form>
+      <div
+        slot="footer"
+        class="dialog-footer"
+      >
+        <el-button @click="handleCloseExportDialog">关闭</el-button>
+      </div>
+    </el-dialog>
+
+  </div>
 
 </template>
 
@@ -359,6 +417,12 @@ export default {
       //modbus只使用ip作为连接id
       isModbusOnlyIp: true,
 
+      curModbusConnectionId: '',
+      curModbusAddr: '',
+
+      // 导出HoldingRegisters寄存器值对话框
+      isExportHoldingRegistersDialogVisible: false,
+
       electronStore: null,
 
       //modbus server 监听端口
@@ -373,11 +437,16 @@ export default {
 
       isHandleModbusServer: false, //正在启动或者关闭server
       isHandleModbusConnect: false, //以client模式，正在连接server
-      isHandleModbusCoils: false, //正在读写线圈
-      isHandleModbusHoldingRegisters: false, //正在读写保存寄存器
 
-      isHandleExportFile: false,
+      isHandleModbusHoldingRegisters: false, //正在读写保存寄存器
+      //isHandleModbusCoils: false, //正在读写线圈
+
+      //正在导出文件过程中
+      isExportingFile: false,
       exportFileFd: null,
+      exportStartRegAddr: null,
+      exportEndRegAddr: null,
+      exportRegQuantity: null,
 
       // 当前modbus连接列表
       modbusConnectionTabList: {},
@@ -414,7 +483,7 @@ export default {
       },
 
       //寄存器读写
-      modbusHoldingRegistersModel: {
+      holdingRegistersModel: {
         regAddr: '',
         regValue: '',
         regQuantity: '',
@@ -423,6 +492,12 @@ export default {
           isSkip16: true,
           isCheckResponse: false,
         },
+      },
+
+      //寄存器导出
+      HoldingRegistersExportModel: {
+        startRegAddr: '', //起始地址
+        endRegAddr: '', //结束地址
       },
 
       //网络通讯日志
@@ -470,24 +545,136 @@ export default {
   },
 
   methods: {
-    handleExportFile() {
-      console.log(process.execPath);
-      console.log(process.cwd());
-      //return;
-
-      const path = 'export/holdingRegister';
-      jsUtil.mkdirsSync(path);
-      this.exportFildFd = fs.openSync(`${path}/aa.txt`, 'a');
-      if (!this.exportFildFd) {
+    // 关闭导出对话框
+    handleCloseExportDialog() {
+      if (!this.isExportingFile) {
+        this.isExportHoldingRegistersDialogVisible = false;
         return;
       }
 
-      fs.writeSync(this.exportFildFd, 'adfadsf\r\n');
-      fs.writeSync(this.exportFildFd, 'bbbbbbb\r\n');
-      fs.writeSync(this.exportFildFd, 'ccccccccc\r\n');
+      this.$confirm('是否停止导出文件，并关闭当前窗口?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }).then(() => {
+        this.isExportHoldingRegistersDialogVisible = false;
+      });
+    },
 
-      fs.closeSync(this.exportFildFd);
-      this.exportFildFd = null;
+    // 处理寄存器值导出
+    handleExportFile() {
+      if (this.isExportingFile) {
+        this.isExportingFile = false;
+        return;
+      }
+
+      if (!this.HoldingRegistersExportModel.startRegAddr) {
+        this.$alert('请输入起始地址', '输入异常', {
+          confirmButtonText: '确定',
+        });
+        return;
+      }
+      const startRegAddr = Number.parseInt(
+        this.HoldingRegistersExportModel.startRegAddr,
+        16
+      );
+      if (startRegAddr > 0xffff) {
+        this.$alert('起始地址异常，地址范围0x0000 至 0xFFFF', '输入异常', {
+          confirmButtonText: '确定',
+        });
+        return;
+      }
+
+      if (!this.HoldingRegistersExportModel.endRegAddr) {
+        this.$alert('请输入结束地址', '输入异常', {
+          confirmButtonText: '确定',
+        });
+        return;
+      }
+      const endRegAddr = Number.parseInt(
+        this.HoldingRegistersExportModel.endRegAddr,
+        16
+      );
+      if (endRegAddr > 0xffff) {
+        this.$alert('结束地址异常，地址范围0x0000 至 0xFFFF', '输入异常', {
+          confirmButtonText: '确定',
+        });
+        return;
+      }
+
+      if (endRegAddr < startRegAddr) {
+        this.$alert('结束地址必须大于起始地址', '输入异常', {
+          confirmButtonText: '确定',
+        });
+        return;
+      }
+
+      const exportPath = 'export/holdingRegister';
+      jsUtil.mkdirsSync(exportPath);
+      let time = jsUtil.timestampToTime(new Date().getTime());
+      time = time.replace(/\:/g, '-');
+      time = time.replace(' ', '');
+      const exportFile =
+        exportPath +
+        `/${this.HoldingRegistersExportModel.startRegAddr}_${this.HoldingRegistersExportModel.endRegAddr}_${time}.txt`;
+
+      console.log('exportFile', exportFile);
+
+      this.exportFildFd = fs.openSync(exportFile, 'a');
+      if (!this.exportFildFd) {
+        this.$alert('打开文件失败', '程序异常', {
+          confirmButtonText: '确定',
+        });
+        return;
+      }
+
+      this.isExportingFile = true;
+      this.exportStartRegAddr = startRegAddr;
+      this.exportEndRegAddr = endRegAddr;
+      this.exportRegQuantity = 20;
+
+      this.exportReadHoldingRegisters();
+    },
+
+    //导出文件过程中，读取保存寄存器
+    exportReadHoldingRegisters() {
+      console.log(
+        'exportReadHoldingRegisterst',
+        this.exportStartRegAddr,
+        this.exportEndRegAddr
+      );
+      if (this.exportStartRegAddr >= this.exportEndRegAddr) {
+        this.isExportingFile = false;
+        fs.closeSync(this.exportFildFd);
+        this.exportFildFd = null;
+
+        this.$alert('导出成功', '提示', {
+          confirmButtonText: '确定',
+        });
+
+        return;
+      }
+
+      const hostPortArr = this.curModbusConnectionId.split(':');
+      const host = hostPortArr[0];
+      const port = hostPortArr[1];
+
+      const params = this.getSlaveParams(host, port, this.curModbusAddr);
+      const modbusParams = {
+        regAddr: this.exportStartRegAddr,
+        regQuantity:
+          this.exportEndRegAddr - this.exportStartRegAddr >
+          this.exportRegQuantity
+            ? this.exportRegQuantity
+            : this.exportEndRegAddr - this.exportStartRegAddr + 1,
+      };
+      Object.assign(params, modbusParams);
+
+      console.log('handleHoldingRegisters', params);
+
+      ipcRenderer.invoke('modbus', 'readHoldingRegisters', params);
+
+      this.exportStartRegAddr += modbusParams.regQuantity;
     },
 
     //启动或关闭server
@@ -552,18 +739,15 @@ export default {
 
     // modbus连接tab点击切换
     handleModbusConnectionClick(tab, event) {
-      /*
       //console.log(tab, event);
-      //console.log(tab.name, tab.label);
-      if (tab.name === 'log') return;
-      this.modbusConnection = this.modbusConnectionTabList[tab.name];
-      */
+      console.log(tab.name, tab.label);
+      if (tab.name === 'connect') return;
+      this.curModbusConnectionId = tab.name;
     },
 
     // modbus地址，tab点击切换
     handleModbusAddrClick(tab, event) {
-      //
-      //this.modbusAddr = tab.name;
+      this.curModbusAddr = tab.name;
     },
 
     // 已有modbus连接下搜索存在的地址
@@ -584,28 +768,28 @@ export default {
 
     // 读写保存寄存器
     handleHoldingRegisters(host, port, slaveAddr) {
-      console.log(
-        'modbusHoldingRegistersModel',
-        this.modbusHoldingRegistersModel
-      );
+      console.log('holdingRegistersModel', this.holdingRegistersModel);
 
-      if (!this.modbusHoldingRegistersModel.regAddr) {
+      //导出文件，直接退出
+      if (this.modbusFC == 'export') {
+        this.isExportHoldingRegistersDialogVisible = true;
+        return;
+      }
+
+      if (!this.holdingRegistersModel.regAddr) {
         this.$alert('请输入寄存器地址', '输入异常', {
           confirmButtonText: '确定',
         });
         return;
       }
-      if (!this.modbusHoldingRegistersModel.regQuantity) {
+      if (!this.holdingRegistersModel.regQuantity) {
         this.$alert('请输入寄存器数量', '输入异常', {
           confirmButtonText: '确定',
         });
         return;
       }
 
-      if (
-        this.modbusFC == '0x10' &&
-        !this.modbusHoldingRegistersModel.regValue
-      ) {
+      if (this.modbusFC == '0x10' && !this.holdingRegistersModel.regValue) {
         this.$alert('请输入寄存器值', '输入异常', {
           confirmButtonText: '确定',
         });
@@ -616,17 +800,14 @@ export default {
 
       const params = this.getSlaveParams(host, port, slaveAddr);
       const modbusParams = {
-        regAddr: Number.parseInt(this.modbusHoldingRegistersModel.regAddr, 16),
+        regAddr: Number.parseInt(this.holdingRegistersModel.regAddr, 16),
         regQuantity: Number.parseInt(
-          this.modbusHoldingRegistersModel.regQuantity,
+          this.holdingRegistersModel.regQuantity,
           10
         ),
         // 只需要传入第一个寄存器值，后续的寄存器值依次递增来设置
-        regValue: Number.parseInt(
-          this.modbusHoldingRegistersModel.regValue,
-          16
-        ),
-        options: this.modbusHoldingRegistersModel.options,
+        regValue: Number.parseInt(this.holdingRegistersModel.regValue, 16),
+        options: this.holdingRegistersModel.options,
       };
 
       Object.assign(params, modbusParams);
@@ -827,7 +1008,7 @@ export default {
 
           // 设置第一个addr，为激活的tab
           if (!this.modbusAddrTabActList[connectionId]) {
-            this.modbusAddrTabActList[
+            this.curModbusAddr = this.modbusAddrTabActList[
               connectionId
             ] = requestInfo.slaveAddr.toString();
           }
@@ -852,6 +1033,25 @@ export default {
         case 'onReadHoldingRegisters':
           console.log('this.regDatas', this.regDatas);
           console.log('requestInfo', requestInfo);
+
+          //如果正在导出文件过程中
+          if (this.isExportingFile) {
+            //没有发生异常，就把读取的寄存器值，写入文件
+            if (!errorCode) {
+              console.log('params', params);
+              for (let regAddr in params) {
+                const regValue = Number(params[regAddr]).toString(16);
+                regAddr = Number(regAddr).toString(16);
+                console.log('writefile', `${regAddr}:${regValue}\r\n`);
+                fs.writeSync(this.exportFildFd, `${regAddr}:${regValue}\r\n`);
+              }
+            }
+
+            //继续读寄存器
+            this.exportReadHoldingRegisters();
+
+            return;
+          }
 
           this.isHandleModbusHoldingRegisters = false;
 

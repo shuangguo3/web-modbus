@@ -170,7 +170,6 @@ export default {
     // 需要显示毫秒
     if (options.isShowMilliSecond) {
       timeStr = timeStr + `:${milliseconds}`;
-      return `${dateStr} ${timeStr}`;
     }
 
     // 不需要显示日期
