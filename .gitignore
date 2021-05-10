@@ -1,6 +1,7 @@
 .DS_Store
 /package-lock.json
 node_modules/
+/export/
 /dist/
 build/win-unpacked/
 build/win-ia32-unpacked/

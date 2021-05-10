@@ -231,10 +231,6 @@
                                 label="10 写多个寄存器"
                                 value="0x10"
                               />
-                              <el-option
-                                label="导出寄存器值到文件"
-                                value="export"
-                              />
                             </el-select>
                             <el-button
                               type="primary"
@@ -243,16 +239,17 @@
                             >下发命令</el-button>
                           </el-form-item>
 
-                          <br />
-                          <el-form-item>
+                          <el-form-item
+                            style="display:block;"
+                            v-if="modbusFC == '0x10'"
+                          >
                             <el-checkbox
-                              v-show="modbusFC == '0x10'"
                               label="高级选项"
                               v-model="holdingRegistersModel.isShowAdvance"
                             ></el-checkbox>
-                          </el-form-item>
-                          <el-form-item v-show="modbusFC == '0x10' && holdingRegistersModel.isShowAdvance">
+
                             <el-tooltip
+                              v-show="modbusFC == '0x10' && holdingRegistersModel.isShowAdvance"
                               effect="dark"
                               content="当写入多个值时，随着地址递增，寄存器值也以写入值为基准递增，如果寄存器值需要跳过 A~F 的16进制值，就勾选此项"
                               placement="bottom-start"
@@ -263,6 +260,7 @@
                               ></el-checkbox>
                             </el-tooltip>
                             <el-tooltip
+                              v-show="modbusFC == '0x10' && holdingRegistersModel.isShowAdvance"
                               effect="dark"
                               content="某些小厂家的modbus实现有bug，所以modbus响应只简单检查slave地址，功能码等，如果要严格按照modbus协议检查响应，就勾选此项"
                               placement="bottom-start"
@@ -273,6 +271,14 @@
                               ></el-checkbox>
                             </el-tooltip>
 
+                          </el-form-item>
+
+                          <br />
+                          <el-form-item>
+                            <el-button
+                              type="primary"
+                              @click="handleExportHoldingRegisters"
+                            >导出寄存器值到文件</el-button>
                           </el-form-item>
                         </el-form>
 
@@ -373,6 +379,15 @@
           ></el-input>
         </el-form-item>
 
+        <el-form-item label="每次读取寄存器数量（1 ~ 125）">
+
+          <el-input
+            v-model="HoldingRegistersExportModel.regQuantity"
+            autocomplete="off"
+            placeholder="每次读取寄存器数量"
+          ></el-input>
+        </el-form-item>
+
         <el-form-item>
           <el-button
             type="primary"
@@ -382,7 +397,11 @@
         </el-form-item>
 
         <el-form-item>
-          导出文件路径：{当前执行程序路径}/export/holdingRegister/{起始地址}_{结束地址}_{导出时间}.txt
+          <ul>
+            <li>自动循环读取寄存器值，读取成功后，写入文件</li>
+            <li>导出文件路径：{当前执行程序路径}/export/holdingRegister/{起始地址}_{结束地址}_{导出时间}.txt</li>
+          </ul>
+
         </el-form-item>
 
       </el-form>
@@ -407,7 +426,7 @@ import jsUtil from '@/utils/jsUtil.js';
 
 import Store from 'electron-store';
 
-const modbusException = require('../../../modbus/exception.js');
+import modbusException from '../../../modbus/exception.js';
 
 export default {
   name: 'AlarmPage',
@@ -510,12 +529,14 @@ export default {
   },
 
   watch: {
+    //modbus server端口改变
     '$store.state.modbus.serverPort': {
       immediate: true,
       handler(modbusServerPort) {
         this.modbusServerPort = modbusServerPort;
       },
     },
+    //modbus 连接列表改变
     '$store.state.modbus.connectionList': {
       immediate: true,
       handler(modbusConnectionList) {
@@ -541,6 +562,11 @@ export default {
           }
         }
       },
+    },
+    logDatas(val) {
+      if (val.length > 1000) {
+        val.splice(1000);
+      }
     },
   },
 
@@ -602,6 +628,23 @@ export default {
         return;
       }
 
+      if (!this.HoldingRegistersExportModel.regQuantity) {
+        this.$alert('请输入每次读取数量', '输入异常', {
+          confirmButtonText: '确定',
+        });
+        return;
+      }
+      const regQuantity = Number.parseInt(
+        this.HoldingRegistersExportModel.regQuantity,
+        16
+      );
+      if (regQuantity > 125 || regQuantity <= 0) {
+        this.$alert('读取数量，数量范围1 ~ 125', '输入异常', {
+          confirmButtonText: '确定',
+        });
+        return;
+      }
+
       if (endRegAddr < startRegAddr) {
         this.$alert('结束地址必须大于起始地址', '输入异常', {
           confirmButtonText: '确定',
@@ -631,7 +674,7 @@ export default {
       this.isExportingFile = true;
       this.exportStartRegAddr = startRegAddr;
       this.exportEndRegAddr = endRegAddr;
-      this.exportRegQuantity = 20;
+      this.exportRegQuantity = regQuantity;
 
       this.exportReadHoldingRegisters();
     },
@@ -669,8 +712,6 @@ export default {
             : this.exportEndRegAddr - this.exportStartRegAddr + 1,
       };
       Object.assign(params, modbusParams);
-
-      console.log('handleHoldingRegisters', params);
 
       ipcRenderer.invoke('modbus', 'readHoldingRegisters', params);
 
@@ -770,12 +811,6 @@ export default {
     handleHoldingRegisters(host, port, slaveAddr) {
       console.log('holdingRegistersModel', this.holdingRegistersModel);
 
-      //导出文件，直接退出
-      if (this.modbusFC == 'export') {
-        this.isExportHoldingRegistersDialogVisible = true;
-        return;
-      }
-
       if (!this.holdingRegistersModel.regAddr) {
         this.$alert('请输入寄存器地址', '输入异常', {
           confirmButtonText: '确定',
@@ -828,6 +863,11 @@ export default {
       }
     },
 
+    handleExportHoldingRegisters() {
+      //弹出导出文件对话框
+      this.isExportHoldingRegistersDialogVisible = true;
+    },
+
     // 获取slave通信参数，包括ip，port，addr
     getSlaveParams(host, port, slaveAddr) {
       slaveAddr = Number(slaveAddr);
@@ -845,6 +885,61 @@ export default {
       return params;
     },
 
+    //modbus错误日志
+    modbusErrorLog(errorCode) {
+      console.log('modbusErrorLog', errorCode);
+      let log = '【modbus异常】';
+      switch (errorCode) {
+        case modbusException.IllegalFunction:
+          log += `错误码：IllegalFunction`;
+          break;
+
+        case modbusException.IllegalDataAddress:
+          log += '【modbus异常】错误码：IllegalDataAddress';
+          break;
+
+        case modbusException.IllegalDataValue:
+          log += '【modbus异常】错误码：IllegalDataValue';
+          break;
+
+        case modbusException.ServerDeviceFailure:
+          log += '【modbus异常】错误码：ServerDeviceFailure';
+          break;
+
+        case modbusException.Aknowledge:
+          log += '【modbus异常】错误码：Aknowledge';
+          break;
+
+        case modbusException.ServerDeviceBusy:
+          log += '【modbus异常】错误码：ServerDeviceBusy';
+          break;
+
+        case modbusException.MemoryParityError:
+          log += '【modbus异常】错误码：MemoryParityError';
+          break;
+
+        case modbusException.GatewayPathUnavailable:
+          log += '【modbus异常】错误码：GatewayPathUnavailable';
+          break;
+
+        case modbusException.GatewayTargetDeviceFailedToRespond:
+          log += '【modbus异常】错误码：GatewayTargetDeviceFailedToRespond';
+          break;
+
+        default:
+          break;
+      }
+
+      const time = jsUtil.timestampToTime(new Date().getTime(), {
+        isNotShowDate: true,
+      });
+      this.logDatas.unshift({
+        time: `【${time}】`,
+        log,
+      });
+    },
+
+    //modbus日志
     modbusLog(requestInfo) {
       const requestBuf = Buffer.from(requestInfo.requestBuf);
       const responseBuf = Buffer.from(requestInfo.responseBuf);
@@ -908,6 +1003,9 @@ export default {
 
       if (requestInfo) {
         errorCode = requestInfo.errorCode;
+        if (errorCode) {
+          this.modbusErrorLog(errorCode);
+        }
         // 获取完整的连接id，区别于requestInfo.connectionId（可能只有ip）
         connectionId = `${requestInfo.host}:${requestInfo.port}`;
       }
@@ -1032,12 +1130,17 @@ export default {
         // 读保存寄存器完成
         case 'onReadHoldingRegisters':
           console.log('this.regDatas', this.regDatas);
-          console.log('requestInfo', requestInfo);
 
           //如果正在导出文件过程中
           if (this.isExportingFile) {
             //没有发生异常，就把读取的寄存器值，写入文件
-            if (!errorCode) {
+            if (errorCode) {
+              this.$alert('读取寄存器异常，导出文件终止', '提示', {
+                confirmButtonText: '确定',
+              });
+              this.isExportingFile = false;
+              return;
+            } else {
               console.log('params', params);
               for (let regAddr in params) {
                 const regValue = Number(params[regAddr]).toString(16);
@@ -1045,6 +1148,9 @@ export default {
                 console.log('writefile', `${regAddr}:${regValue}\r\n`);
                 fs.writeSync(this.exportFildFd, `${regAddr}:${regValue}\r\n`);
               }
+
+              //记录modbus日志
+              this.modbusLog(requestInfo);
             }
 
             //继续读寄存器
