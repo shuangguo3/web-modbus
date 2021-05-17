@@ -16,8 +16,8 @@ x64:
     - dist/electron/**/*
 nsis:
   script: |-
-    !include "F:\electron\project\electron-full\node_modules\app-builder-lib\templates\nsis\include\StdUtils.nsh"
-    !addincludedir "F:\electron\project\electron-full\node_modules\app-builder-lib\templates\nsis\include"
+    !include "F:\electron\project\web-modbus\node_modules\app-builder-lib\templates\nsis\include\StdUtils.nsh"
+    !addincludedir "F:\electron\project\web-modbus\node_modules\app-builder-lib\templates\nsis\include"
     !macro _isUpdated _a _b _t _f
       ${StdUtils.TestParameter} $R9 "updated"
       StrCmp "$R9" "true" `${_t}` `${_f}`
@@ -90,7 +90,7 @@ nsis:
     !macroend
 
     !addplugindir /x86-unicode "C:\Users\Administrator\AppData\Local\electron-builder\Cache\nsis\nsis-resources-3.4.1\plugins\x86-unicode"
-    !include "C:\Users\ADMINI~1\AppData\Local\Temp\t-7v59NL\0-messages.nsh"
+    !include "C:\Users\ADMINI~1\AppData\Local\Temp\t-eEJVlU\0-messages.nsh"
 
     Var newStartMenuLink
     Var oldStartMenuLink
