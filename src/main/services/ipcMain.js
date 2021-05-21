@@ -148,46 +148,17 @@ export default {
             slaveAddr: params.slaveAddr,
             // 读取任意1个寄存器地址，如果超时表示：slaveaddr不存在
             regAddr: 0,
+            // regAddr: 0x8000,
             regQuantity: 1,
             callback: (requestInfo) => {
 
               console.log('callback', requestInfo);
-              // 读取保存寄存器成功后，调用rtu的获取寄存器值方法（把本次获取的寄存器值放入列表），并在回调函数里把寄存器值发送给渲染进程
-              modbusRtu.getHoldingRegistersValue(() => {
-
-                // 寄存器读取成功，表示当前slaveaddr存在，可正常调用
-                global.windowList.mainWindow.webContents.send(
-                  'modbus',
-                  'onCheckSlaveAddr',
-                  null,
-                  {
-                    host: modbusRtu.host,
-                    port: modbusRtu.port,
-                    connectionId: params.connectionId,
-
-                    slaveAddr: params.slaveAddr,
-                    regAddr: params.regAddr,
-                    regQuantity: params.regQuantity,
-
-                    requestBuf: requestInfo.requestBuf,
-                    responseBuf: requestInfo.responseBuf,
-                  }
-                );
-
-              });
-
-            },
-            errorCallback(errorCode, requestInfo) {
-              console.log('errorCallback', errorCode, requestInfo);
-
-              // 寄存器读取失败，表示当前slaveaddr不存在，不可调用
+              // 寄存器读取成功，表示当前slaveaddr存在，可正常调用
               global.windowList.mainWindow.webContents.send(
                 'modbus',
                 'onCheckSlaveAddr',
                 null,
                 {
-                  errorCode, // 错误码
-
                   host: modbusRtu.host,
                   port: modbusRtu.port,
                   connectionId: params.connectionId,
@@ -199,6 +170,36 @@ export default {
                   requestBuf: requestInfo.requestBuf,
                   responseBuf: requestInfo.responseBuf,
                 }
+              );
+
+            },
+            errorCallback(errorCode, requestInfo) {
+              console.log('errorCallback', errorCode, requestInfo);
+
+              const exception = require('../../modbus/exception.js');
+
+              const sendRequestInfo = {
+                host: modbusRtu.host,
+                port: modbusRtu.port,
+                connectionId: params.connectionId,
+
+                slaveAddr: params.slaveAddr,
+                regAddr: params.regAddr,
+                regQuantity: params.regQuantity,
+
+                requestBuf: requestInfo.requestBuf,
+                responseBuf: requestInfo.responseBuf,
+              };
+              // 如果读取寄存器发生错误，但错误码为IllegalDataAddress，表示从机地址存在，只是寄存器地址异常，查找从机成功
+              if (errorCode !== exception.IllegalDataAddress) {
+                sendRequestInfo.errorCode = errorCode;
+              }
+
+              global.windowList.mainWindow.webContents.send(
+                'modbus',
+                'onCheckSlaveAddr',
+                null,
+                sendRequestInfo
               );
 
             },
@@ -291,7 +292,7 @@ export default {
             regAddr: params.regAddr,
             regQuantity: params.regQuantity,
             regValue: params.regValue,
-            regValueBuf: params.regValueBuf,
+            regValueBuf: Buffer.from(params.regValueBuf),
             options: params.options,
             callback: (requestInfo) => {
 
@@ -313,7 +314,6 @@ export default {
                   slaveAddr: params.slaveAddr,
                   regAddr: params.regAddr,
                   regQuantity: params.regQuantity,
-                  regValueBuf: params.regValueBuf,
 
                   requestBuf: requestInfo.requestBuf,
                   responseBuf: requestInfo.responseBuf,

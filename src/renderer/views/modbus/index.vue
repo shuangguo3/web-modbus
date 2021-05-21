@@ -243,24 +243,32 @@
                             style="display:block;"
                             v-if="modbusFC == '0x10'"
                           >
-                            <el-checkbox
-                              label="高级选项"
-                              v-model="holdingRegistersModel.isShowAdvance"
-                            ></el-checkbox>
+                            <el-tooltip
+                              v-show="modbusFC == '0x10'"
+                              effect="dark"
+                              content="默认每个地址写入同样的值，如果需要随着地址递增，寄存器值也递增，就勾选此项"
+                              placement="bottom-start"
+                            >
+                              <el-checkbox
+                                label="寄存器值递增"
+                                v-model="holdingRegistersModel.options.isValueInc"
+                              ></el-checkbox>
+                            </el-tooltip>
 
                             <el-tooltip
-                              v-show="modbusFC == '0x10' && holdingRegistersModel.isShowAdvance"
+                              v-show="modbusFC == '0x10' && holdingRegistersModel.options.isValueInc"
                               effect="dark"
-                              content="当写入多个值时，随着地址递增，寄存器值也以写入值为基准递增，如果寄存器值需要跳过 A~F 的16进制值，就勾选此项"
+                              content="寄存器值递增时，需要跳过 A~F 的16进制值，就勾选此项"
                               placement="bottom-start"
                             >
                               <el-checkbox
                                 label="寄存器值跳过16进制"
-                                v-model="holdingRegistersModel.options.isSkip16"
+                                v-model="holdingRegistersModel.options.isValueSkip16"
                               ></el-checkbox>
                             </el-tooltip>
+                            <!--
                             <el-tooltip
-                              v-show="modbusFC == '0x10' && holdingRegistersModel.isShowAdvance"
+                              v-show="modbusFC == '0x10'"
                               effect="dark"
                               content="某些小厂家的modbus实现有bug，所以modbus响应只简单检查slave地址，功能码等，如果要严格按照modbus协议检查响应，就勾选此项"
                               placement="bottom-start"
@@ -270,6 +278,7 @@
                                 v-model="holdingRegistersModel.options.isCheckResponse"
                               ></el-checkbox>
                             </el-tooltip>
+                            -->
 
                           </el-form-item>
 
@@ -506,9 +515,9 @@ export default {
         regAddr: '',
         regValue: '',
         regQuantity: '',
-        isShowAdvance: false, //是否显示高级选项
         options: {
-          isSkip16: true,
+          isValueSkip16: true,
+          isValueInc: false, //写入时，寄存器值是否递增
           isCheckResponse: false,
         },
       },
@@ -824,25 +833,77 @@ export default {
         return;
       }
 
-      if (this.modbusFC == '0x10' && !this.holdingRegistersModel.regValue) {
-        this.$alert('请输入寄存器值', '输入异常', {
-          confirmButtonText: '确定',
-        });
-        return;
+      const regAddr = Number.parseInt(this.holdingRegistersModel.regAddr, 16);
+      const regQuantity = Number.parseInt(
+        this.holdingRegistersModel.regQuantity,
+        10
+      );
+      const options = this.holdingRegistersModel.options;
+      let regValue, regValueBuf;
+
+      //如果是写入寄存器
+      if (this.modbusFC == '0x10') {
+        if (!this.holdingRegistersModel.regValue) {
+          this.$alert('请输入寄存器值', '输入异常', {
+            confirmButtonText: '确定',
+          });
+          return;
+        }
+
+        regValue = Number.parseInt(this.holdingRegistersModel.regValue, 16);
+
+        //生成寄存器值缓冲区
+        regValueBuf = Buffer.allocUnsafe(regQuantity * 2);
+
+        // 设置寄存器值
+        // 如果传入了第一个寄存器值，表示后续的寄存器值依次递增来设置
+        if (Number.isInteger(regValue)) {
+          let curRegValue = regValue;
+          for (let i = 0; i < regQuantity; i++) {
+            console.log('writeUIntBE', curRegValue, 7 + i);
+
+            // 是否跳过16进制的a~f
+            if (options.isValueInc && options.isValueSkip16) {
+              if (curRegValue % 0x10 >= 0xa) {
+                curRegValue += 6;
+              }
+              if (curRegValue % 0x100 >= 0xa0) {
+                curRegValue += 6 * 16;
+              }
+              if (curRegValue % 0x1000 >= 0xa00) {
+                curRegValue += 6 * 256;
+              }
+            }
+
+            if (options.isValueSkip16) {
+              if (curRegValue >= 0x9999) {
+                curRegValue = 0x9999;
+              }
+            } else {
+              if (curRegValue >= 0xffff) {
+                curRegValue = 0xffff;
+              }
+            }
+
+            regValueBuf.writeUIntBE(curRegValue, i * 2, 2);
+
+            if (options.isValueInc) {
+              curRegValue++;
+            }
+          }
+        }
       }
 
       this.isHandleModbusHoldingRegisters = true;
 
+      console.log('regValueBuf', regValueBuf);
+
       const params = this.getSlaveParams(host, port, slaveAddr);
       const modbusParams = {
-        regAddr: Number.parseInt(this.holdingRegistersModel.regAddr, 16),
-        regQuantity: Number.parseInt(
-          this.holdingRegistersModel.regQuantity,
-          10
-        ),
-        // 只需要传入第一个寄存器值，后续的寄存器值依次递增来设置
-        regValue: Number.parseInt(this.holdingRegistersModel.regValue, 16),
-        options: this.holdingRegistersModel.options,
+        regAddr,
+        regQuantity,
+        regValueBuf,
+        options,
       };
 
       Object.assign(params, modbusParams);
