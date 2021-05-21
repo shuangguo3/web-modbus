@@ -876,6 +876,7 @@ export default {
             }
 
             if (options.isValueSkip16) {
+              //
               if (curRegValue >= 0x9999) {
                 curRegValue = 0x9999;
               }
