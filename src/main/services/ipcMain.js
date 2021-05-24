@@ -69,12 +69,12 @@ export default {
     ipcMain.handle('modbus', async (event, msg, params) => {
       console.log('ipcMain modbus', msg, params);
 
-      const modbusTcp = global.modbusTcp;
+      const wtcpModbus = global.wtcpModbus;
       let modbusRtu;
 
       if (params && params.connectionId) {
 
-        modbusRtu = modbusTcp.rtuList[params.connectionId];
+        modbusRtu = wtcpModbus.getRtu(params.connectionId);
         if (!modbusRtu) {
           console.log('rtu not exist:', params.connectionId);
           return;
@@ -91,20 +91,21 @@ export default {
 
           serverPort = electronStore.get('modbus.serverPort');
 
-          modbusTcp.listen(serverPort, () => {
-
-            global.windowList.mainWindow.webContents.send(
-              'modbus',
-              'onStartServer',
-              { serverPort }
-            );
-
+          wtcpModbus.startServer({
+            port: serverPort,
+            callback: () => {
+              global.windowList.mainWindow.webContents.send(
+                'modbus',
+                'onStartServer',
+                { serverPort }
+              );
+            },
           });
           break;
 
         // close server
         case 'closeServer':
-          modbusTcp.closeServer(() => {
+          wtcpModbus.closeServer(() => {
 
             global.windowList.mainWindow.webContents.send(
               'modbus',
@@ -115,15 +116,15 @@ export default {
           break;
 
         // 以client模式连接server
-        case 'connect':
+        case 'startClient':
 
-          modbusTcp.connect({
+          wtcpModbus.startClient({
             host: params.host,
             port: params.port,
             callback: () => {
               global.windowList.mainWindow.webContents.send(
                 'modbus',
-                'onConnect'
+                'onStartClient'
               );
             },
           });
@@ -131,14 +132,13 @@ export default {
 
         // 获取server状态
         case 'getServerStatus':
-          return modbusTcp.serverPort;
+          return wtcpModbus.serverPort;
 
         // 获取连接列表
         case 'getConnectionList':
-          console.log('getConnectionList', modbusTcp.connectionList);
-          // event.returnValue = modbusTcp.connectionList;
+          console.log('getConnectionList', wtcpModbus.connectionList);
 
-          return modbusTcp.connectionList;
+          return wtcpModbus.connectionList;
           // break;
 
         case 'checkSlaveAddr':
@@ -176,7 +176,7 @@ export default {
             errorCallback(errorCode, requestInfo) {
               console.log('errorCallback', errorCode, requestInfo);
 
-              const exception = require('../../modbus/exception.js');
+              const modbusException = require('wtcp-modbus').exception;
 
               const sendRequestInfo = {
                 host: modbusRtu.host,
@@ -191,7 +191,7 @@ export default {
                 responseBuf: requestInfo.responseBuf,
               };
               // 如果读取寄存器发生错误，但错误码为IllegalDataAddress，表示从机地址存在，只是寄存器地址异常，查找从机成功
-              if (errorCode !== exception.IllegalDataAddress) {
+              if (errorCode !== modbusException.IllegalDataAddress) {
                 sendRequestInfo.errorCode = errorCode;
               }
 

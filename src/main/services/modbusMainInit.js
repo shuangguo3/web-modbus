@@ -5,12 +5,13 @@
 // import config from '@config';
 import Store from 'electron-store';
 
-const ModbusTcp = require('../../modbus/tcp');
+const WtcpModbus = require('wtcp-modbus');
 
 // modbus在主进程内的初始化
 function modbusMainInit() {
   // 启动modbus tcp服务器，并且保存在全局变量global
-  global.modbusTcp = new ModbusTcp({
+  // global.modbusTcp = new ModbusTcp({
+  global.wtcpModbus = new WtcpModbus.tcp({
     // 回调函数
     callbackList: {
 
@@ -64,27 +65,7 @@ function modbusMainInit() {
     electronStore.set('modbus.serverPort', serverPort);
   }
 
-  /*
-  // 必须先主动listen（作为server）或者connect（作为client）
-  global.modbusTcp.listen(serverPort, () => {
-
-    console.log('listen success');
-    global.windowList.mainWindow.webContents.send(
-      'modbus',
-      'onStartServer',
-      { serverPort }
-    );
-
-  });
-  */
-
-  // 作为client连接
-  /*
-  global.modbusTcp.connect({
-    host: '127.0.0.1',
-    port: 502,
-  });
-  */
+  // webModbus.getRtu('aaa');
 
 }
 export default modbusMainInit;

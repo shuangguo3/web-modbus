@@ -108,7 +108,7 @@
                       <el-button
                         type="primary"
                         :loading="isHandleModbusConnect"
-                        @click="handleModbusConnect"
+                        @click="handleModbusStartClient"
                       >连接</el-button>
                     </el-form-item>
                   </el-form>
@@ -435,7 +435,7 @@ import jsUtil from '@/utils/jsUtil.js';
 
 import Store from 'electron-store';
 
-import modbusException from '../../../modbus/exception.js';
+import { exception as modbusException } from 'wtcp-modbus';
 
 export default {
   name: 'AlarmPage',
@@ -750,7 +750,7 @@ export default {
     },
 
     // 以client模式，连接server
-    handleModbusConnect() {
+    handleModbusStartClient() {
       if (!this.modbusClientModel.host) {
         this.$alert('请输入主机地址', '输入异常', {
           confirmButtonText: '确定',
@@ -778,7 +778,7 @@ export default {
       }
 
       this.isHandleModbusConnect = true;
-      ipcRenderer.invoke('modbus', 'connect', this.modbusClientModel);
+      ipcRenderer.invoke('modbus', 'startClient', this.modbusClientModel);
       this.modbusConnectTimeout = setTimeout(() => {
         this.$alert('请检查主机状态', '连接失败', {
           confirmButtonText: '确定',
@@ -1081,7 +1081,7 @@ export default {
           break;
 
         //以client模式，连接成功
-        case 'onConnect':
+        case 'onStartClient':
           this.isHandleModbusConnect = false;
           clearTimeout(this.modbusConnectTimeout);
           this.$alert('连接成功', '连接成功', {
