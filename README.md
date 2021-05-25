@@ -1,6 +1,8 @@
 # web-modbus
 
-> 此项目基于 Electron-Vue-template, 使用electron，以web的方式开发modbus应用。用到的技术栈：elementUI, vuex, vue-router, axios。
+- 此项目基于 Electron-Vue-template, 使用electron，以web的方式开发modbus应用。
+- 使用的modbus库：[wtcp-modbus](https://github.com/shuangguo3/wtcp-modbus.git)（作者开发的node版本的modbus库）
+- 用到的技术栈：elementUI, vuex, vue-router, axios。
 
 
 ## 安装
