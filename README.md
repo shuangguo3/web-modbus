@@ -17,10 +17,10 @@ npm run build
 ```
 
 
-![image](https://gitlab.com/shuangguo3/web-modbus/-/blob/master/readme-pics/1.png)
-![image](https://gitlab.com/shuangguo3/web-modbus/-/blob/master/readme-pics/2.png)
-![image](https://gitlab.com/shuangguo3/web-modbus/-/blob/master/readme-pics/3.png)
-![image](https://gitlab.com/shuangguo3/web-modbus/-/blob/master/readme-pics/4.png)
-![image](https://gitlab.com/shuangguo3/web-modbus/-/blob/master/readme-pics/5.png)
-![image](https://gitlab.com/shuangguo3/web-modbus/-/blob/master/readme-pics/6.png)
-![image](https://gitlab.com/shuangguo3/web-modbus/-/blob/master/readme-pics/7.png)
+![image](https://gitlab.com/shuangguo3/web-modbus/-/raw/master/readme-pics/1.png)
+![image](https://gitlab.com/shuangguo3/web-modbus/-/raw/master/readme-pics/2.png)
+![image](https://gitlab.com/shuangguo3/web-modbus/-/raw/master/readme-pics/3.png)
+![image](https://gitlab.com/shuangguo3/web-modbus/-/raw/master/readme-pics/4.png)
+![image](https://gitlab.com/shuangguo3/web-modbus/-/raw/master/readme-pics/5.png)
+![image](https://gitlab.com/shuangguo3/web-modbus/-/raw/master/readme-pics/6.png)
+![image](https://gitlab.com/shuangguo3/web-modbus/-/raw/master/readme-pics/7.png)
