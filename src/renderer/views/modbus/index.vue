@@ -615,6 +615,7 @@ export default {
 
       if (!this.HoldingRegistersExportModel.startRegAddr) {
         this.$alert('请输入起始地址', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
@@ -625,6 +626,7 @@ export default {
       );
       if (startRegAddr > 0xffff) {
         this.$alert('起始地址异常，地址范围0x0000 至 0xFFFF', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
@@ -632,6 +634,7 @@ export default {
 
       if (!this.HoldingRegistersExportModel.endRegAddr) {
         this.$alert('请输入结束地址', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
@@ -642,6 +645,7 @@ export default {
       );
       if (endRegAddr > 0xffff) {
         this.$alert('结束地址异常，地址范围0x0000 至 0xFFFF', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
@@ -649,6 +653,7 @@ export default {
 
       if (!this.HoldingRegistersExportModel.regQuantity) {
         this.$alert('请输入每次读取数量', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
@@ -659,6 +664,7 @@ export default {
       );
       if (regQuantity > 125 || regQuantity <= 0) {
         this.$alert('读取数量，数量范围1 ~ 125', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
@@ -666,6 +672,7 @@ export default {
 
       if (endRegAddr < startRegAddr) {
         this.$alert('结束地址必须大于起始地址', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
@@ -685,6 +692,7 @@ export default {
       this.exportFildFd = fs.openSync(exportFile, 'a');
       if (!this.exportFildFd) {
         this.$alert('打开文件失败', '程序异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
@@ -763,12 +771,14 @@ export default {
     handleModbusStartClient() {
       if (!this.modbusClientModel.host) {
         this.$alert('请输入主机地址', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
       }
       if (!this.modbusClientModel.port) {
         this.$alert('请输入主机端口', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
@@ -781,6 +791,7 @@ export default {
           `${this.modbusClientModel.host}:${this.modbusClientModel.port}`
         ) {
           this.$alert('重复连接：' + modbusConnectionId, '输入异常', {
+            type: 'error',
             confirmButtonText: '确定',
           });
           return;
@@ -791,6 +802,7 @@ export default {
       ipcRenderer.invoke('modbus', 'startClient', this.modbusClientModel);
       this.modbusConnectTimeout = setTimeout(() => {
         this.$alert('请检查主机状态', '连接失败', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         this.isHandleModbusConnect = false;
@@ -832,12 +844,14 @@ export default {
 
       if (!this.holdingRegistersModel.regAddr) {
         this.$alert('请输入寄存器地址', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
       }
       if (!this.holdingRegistersModel.regQuantity) {
         this.$alert('请输入寄存器数量', '输入异常', {
+          type: 'error',
           confirmButtonText: '确定',
         });
         return;
@@ -855,6 +869,7 @@ export default {
       if (this.modbusFC == '0x10') {
         if (!this.holdingRegistersModel.regValue) {
           this.$alert('请输入寄存器值', '输入异常', {
+            type: 'error',
             confirmButtonText: '确定',
           });
           return;
@@ -1025,7 +1040,7 @@ export default {
 
       this.$message({
         message: '操作失败，详细错误信息请查看日志',
-        type: 'success',
+        type: 'error',
       });
     },
 
@@ -1227,6 +1242,7 @@ export default {
             //没有发生异常，就把读取的寄存器值，写入文件
             if (errorCode) {
               this.$alert('读取寄存器异常，导出文件终止', '提示', {
+                type: 'error',
                 confirmButtonText: '确定',
               });
               this.isExportingFile = false;
@@ -1310,6 +1326,7 @@ export default {
           if (errorCode) {
             console.log('onWriteHoldingRegisters errorCode', errorCode);
             this.$alert('写入失败', '提示', {
+              type: 'error',
               confirmButtonText: '确定',
             });
             return;
