@@ -1,8 +1,8 @@
 <template>
 
-  <div>
+  <el-container class="container">
 
-    <el-container class="container">
+    <el-container>
 
       <el-main>
         <!--modbus连接tabs-->
@@ -330,28 +330,38 @@
 
         </el-tabs>
       </el-main>
-
-      <el-aside
-        width="400px"
-        class="log-sidebar"
-      >
-        <el-scrollbar class="scrollbar-wrapper">
-          <el-table
-            :data="logDatas"
-            style="width: 100%"
-          >
-            <el-table-column label="日志">
-              <template slot-scope="scope">
-                <div v-if="scope.row.time">{{ scope.row.time }}</div>
-                <div v-if="scope.row.log">{{ scope.row.log }}</div>
-                <div v-if="scope.row.requestStr">{{ scope.row.requestStr }}</div>
-                <div v-if="scope.row.responseStr">{{ scope.row.responseStr }}</div>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-scrollbar>
-      </el-aside>
+      <el-footer
+        height="30px"
+        class="status"
+      >产品主页：https://github.com/shuangguo3/web-modbus （请保留此版权信息）</el-footer>
     </el-container>
+
+    <el-aside
+      width="400px"
+      class="log-sidebar"
+    >
+      <el-scrollbar class="scrollbar-wrapper">
+        <el-table
+          :data="logDatas"
+          style="width: 100%"
+        >
+          <el-table-column label="日志">
+            <template slot-scope="scope">
+              <div
+                v-if="scope.row.time"
+                :class="scope.row.isError?'log-error':''"
+              >{{ scope.row.time }}</div>
+              <div
+                v-if="scope.row.log"
+                :class="scope.row.isError?'log-error':''"
+              >{{ scope.row.log }}</div>
+              <div v-if="scope.row.requestStr">{{ scope.row.requestStr }}</div>
+              <div v-if="scope.row.responseStr">{{ scope.row.responseStr }}</div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-scrollbar>
+    </el-aside>
 
     <el-dialog
       title="导出文件"
@@ -422,7 +432,7 @@
       </div>
     </el-dialog>
 
-  </div>
+  </el-container>
 
 </template>
 
@@ -950,42 +960,54 @@ export default {
     //modbus错误日志
     modbusErrorLog(errorCode) {
       console.log('modbusErrorLog', errorCode);
-      let log = '【modbus异常】';
+      let log = '【modbus异常】错误码：';
       switch (errorCode) {
         case modbusException.IllegalFunction:
-          log += `错误码：IllegalFunction`;
+          log += `IllegalFunction`;
           break;
 
         case modbusException.IllegalDataAddress:
-          log += '【modbus异常】错误码：IllegalDataAddress';
+          log += 'IllegalDataAddress';
           break;
 
         case modbusException.IllegalDataValue:
-          log += '【modbus异常】错误码：IllegalDataValue';
+          log += 'IllegalDataValue';
           break;
 
         case modbusException.ServerDeviceFailure:
-          log += '【modbus异常】错误码：ServerDeviceFailure';
+          log += 'ServerDeviceFailure';
           break;
 
         case modbusException.Aknowledge:
-          log += '【modbus异常】错误码：Aknowledge';
+          log += 'Aknowledge';
           break;
 
         case modbusException.ServerDeviceBusy:
-          log += '【modbus异常】错误码：ServerDeviceBusy';
+          log += 'ServerDeviceBusy';
           break;
 
         case modbusException.MemoryParityError:
-          log += '【modbus异常】错误码：MemoryParityError';
+          log += 'MemoryParityError';
           break;
 
         case modbusException.GatewayPathUnavailable:
-          log += '【modbus异常】错误码：GatewayPathUnavailable';
+          log += 'GatewayPathUnavailable';
           break;
 
         case modbusException.GatewayTargetDeviceFailedToRespond:
-          log += '【modbus异常】错误码：GatewayTargetDeviceFailedToRespond';
+          log += 'GatewayTargetDeviceFailedToRespond';
+          break;
+
+        case modbusException.RequestTimeout:
+          log += 'RequestTimeout';
+          break;
+
+        case modbusException.RecvDataError:
+          log += 'RecvDataError';
+          break;
+
+        case modbusException.CrcError:
+          log += 'CrcError';
           break;
 
         default:
@@ -996,8 +1018,14 @@ export default {
         isNotShowDate: true,
       });
       this.logDatas.unshift({
+        isError: true,
         time: `【${time}】`,
         log,
+      });
+
+      this.$message({
+        message: '操作失败，详细错误信息请查看日志',
+        type: 'success',
       });
     },
 
@@ -1097,6 +1125,7 @@ export default {
               isNotShowDate: true,
             });
             this.logDatas.unshift({
+              isError: true,
               time: `【${time}】`,
               log: `查询地址失败：【${connectionId}:地址${this.checkModbusSlaveAddr}】`,
             });
@@ -1385,5 +1414,15 @@ export default {
 //高度设为100，才能竖向滚动
 .el-scrollbar {
   height: 100% !important;
+}
+
+.status {
+  height: 30px;
+  line-height: 30px;
+  border: 1px solid #ddd;
+}
+
+.log-error {
+  color: #f00;
 }
 </style>
