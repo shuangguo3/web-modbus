@@ -316,6 +316,19 @@
                             {{ scope.row.valueOf10 }}
                           </template>
                         </el-table-column>
+                        <el-table-column
+                          fixed="right"
+                          label="操作"
+                          width="100"
+                        >
+                          <template slot-scope="scope">
+                            <el-button
+                              @click="handleDeleteReg(scope.row, connection.host, connection.port, addr)"
+                              type="text"
+                              size="small"
+                            >删除</el-button>
+                          </template>
+                        </el-table-column>
                       </el-table>
                     </div>
 
@@ -363,6 +376,7 @@
       </el-scrollbar>
     </el-aside>
 
+    <!--导出文件对话框-->
     <el-dialog
       title="导出文件"
       :close-on-click-modal="false"
@@ -432,6 +446,38 @@
       </div>
     </el-dialog>
 
+    <!--删除寄存器数据对话框-->
+    <el-dialog
+      title="删除确认"
+      :visible.sync="isDelRegDataDialogVisible"
+    >
+      <el-form>
+        <el-form-item label-width="50">
+          <el-alert
+            title="此操作将删除当前地址的值，并且把后面地址的值往前移动"
+            type="warning"
+          >
+          </el-alert>
+        </el-form-item>
+        <el-form-item
+          label="移动数量"
+          label-width="50"
+        >
+          <el-input v-model="delRegDataForm.offsetRegQuantity"></el-input>
+        </el-form-item>
+      </el-form>
+      <div
+        slot="footer"
+        class="dialog-footer"
+      >
+        <el-button @click="isDelRegDataDialogVisible = false">取 消</el-button>
+        <el-button
+          type="primary"
+          @click="handleDoDelRegData"
+        >确 定</el-button>
+      </div>
+    </el-dialog>
+
   </el-container>
 
 </template>
@@ -460,6 +506,9 @@ export default {
 
       // 导出HoldingRegisters寄存器值对话框
       isExportHoldingRegistersDialogVisible: false,
+
+      // 删除寄存器值对话框
+      isDelRegDataDialogVisible: false,
 
       electronStore: null,
 
@@ -507,6 +556,14 @@ export default {
         serverPort: '',
       },
       modbusConnectTimeout: null,
+
+      // 删除寄存器数据
+      isDelRegData: false, // 正在删除寄存器数据标志
+      delRegDataForm: {
+        offsetRegQuantity: 60, //需要往前移动的寄存器数量，默认60，最大120
+
+        regAddr: null, //需要删除的寄存器地址
+      },
 
       //client模式设置
       modbusClientModel: {
@@ -590,6 +647,66 @@ export default {
   },
 
   methods: {
+    //删除寄存器数据
+    handleDeleteReg(row, host, port, addr) {
+      this.delRegDataForm.regAddr = Number.parseInt(row.regAddr, 16);
+
+      this.delRegDataForm.host = host;
+      this.delRegDataForm.port = port;
+      this.delRegDataForm.slaveAddr = addr;
+
+      this.isDelRegDataDialogVisible = true;
+    },
+
+    //执行删除
+    handleDoDelRegData() {
+      // 读取输入数量的寄存器，把后面的寄存器数据往前移动后，再重新写入
+
+      const offsetRegQuantity = parseInt(this.delRegDataForm.offsetRegQuantity);
+      if (!offsetRegQuantity || offsetRegQuantity > 120) {
+        this.$message({
+          message: '移动数量必须是数字，且必须小于120',
+          type: 'warning',
+        });
+        return;
+      }
+
+      /*
+      const loading = this.$loading({
+          lock: true,
+          text: '删除中...',
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        });
+        setTimeout(() => {
+          loading.close();
+        }, 2000);
+        */
+
+      this.isDelRegDataDialogVisible = false;
+
+      const params = this.getSlaveParams(
+        this.delRegDataForm.host,
+        this.delRegDataForm.port,
+        this.delRegDataForm.slaveAddr
+      );
+      const modbusParams = {
+        regAddr: this.delRegDataForm.regAddr,
+        regQuantity: offsetRegQuantity,
+        regValueBuf: null,
+        options: {},
+      };
+
+      Object.assign(params, modbusParams);
+
+      console.log('handleDoDelRegData', params);
+
+      // 设置删除寄存器数据标志
+      this.isDelRegData = true;
+
+      ipcRenderer.invoke('modbus', 'readHoldingRegisters', params);
+    },
+
     // 关闭导出对话框
     handleCloseExportDialog() {
       if (!this.isExportingFile) {
@@ -1046,8 +1163,10 @@ export default {
 
     //modbus日志
     modbusLog(requestInfo) {
-      const requestBuf = Buffer.from(requestInfo.requestBuf);
-      const responseBuf = Buffer.from(requestInfo.responseBuf);
+      //const requestBuf = Buffer.from(requestInfo.requestBuf);
+      //const responseBuf = Buffer.from(requestInfo.responseBuf);
+      const requestBuf = requestInfo.requestBuf;
+      const responseBuf = requestInfo.responseBuf;
 
       console.log('modbusLog', requestBuf, responseBuf);
 
@@ -1084,9 +1203,8 @@ export default {
   created: function () {
     //初始化store实例
     this.electronStore = new Store();
-    this.modbusServerModel.serverPort = this.electronStore.get(
-      'modbus.serverPort'
-    );
+    this.modbusServerModel.serverPort =
+      this.electronStore.get('modbus.serverPort');
 
     // 主动去获取一次modbus server 状态，避免渲染进程未启动时，遗漏主进程已经收到的连接
     ipcRenderer.invoke('modbus', 'getServerStatus').then((serverPort) => {
@@ -1113,6 +1231,13 @@ export default {
         }
         // 获取完整的连接id，区别于requestInfo.connectionId（可能只有ip）
         connectionId = `${requestInfo.host}:${requestInfo.port}`;
+
+        console.log('requestInfo.requestBuf', requestInfo.requestBuf);
+        console.log('requestInfo.responseBuf', requestInfo.responseBuf);
+
+        //转换缓存区
+        requestInfo.requestBuf = Buffer.from(requestInfo.requestBuf);
+        requestInfo.responseBuf = Buffer.from(requestInfo.responseBuf);
       }
 
       switch (msg) {
@@ -1212,9 +1337,8 @@ export default {
 
           // 设置第一个addr，为激活的tab
           if (!this.modbusAddrTabActList[connectionId]) {
-            this.curModbusAddr = this.modbusAddrTabActList[
-              connectionId
-            ] = requestInfo.slaveAddr.toString();
+            this.curModbusAddr = this.modbusAddrTabActList[connectionId] =
+              requestInfo.slaveAddr.toString();
           }
 
           // 继续检查下一个地址
@@ -1276,6 +1400,57 @@ export default {
             return;
           }
 
+          // 正在删除寄存器数据
+          if (this.isDelRegData) {
+            const offsetRegQuantity = parseInt(
+              this.delRegDataForm.offsetRegQuantity
+            );
+            //生成寄存器值缓冲区
+            const regValueBuf = Buffer.allocUnsafe(offsetRegQuantity * 2);
+
+            console.log('requestInfo.responseBuf', requestInfo.responseBuf);
+
+            // 设置寄存器值
+            for (let i = 0; i < offsetRegQuantity - 1; i++) {
+              // 从读响应缓存区，获取当前地址的下一个地址的数据
+              // 响应缓存区的前3个字节为 1字节从机地址 1字节功能码 1字节字节数
+              const offsetRegValue = requestInfo.responseBuf.readUIntBE(
+                3 + i * 2 + 2,
+                2
+              );
+              regValueBuf.writeUIntBE(offsetRegValue, i * 2, 2);
+            }
+
+            // 前面的数据往前移动一个地址，最后一个数据保持不变
+            regValueBuf.writeUIntBE(
+              requestInfo.responseBuf.readUIntBE(
+                3 + (offsetRegQuantity - 1) * 2,
+                2
+              ),
+              (offsetRegQuantity - 1) * 2,
+              2
+            );
+
+            console.log('regValueBuf', regValueBuf);
+
+            const params = this.getSlaveParams(
+              this.delRegDataForm.host,
+              this.delRegDataForm.port,
+              this.delRegDataForm.slaveAddr
+            );
+            const modbusParams = {
+              regAddr: this.delRegDataForm.regAddr,
+              regQuantity: offsetRegQuantity,
+              regValueBuf,
+              options: {},
+            };
+            Object.assign(params, modbusParams);
+
+            ipcRenderer.invoke('modbus', 'writeHoldingRegisters', params);
+
+            return;
+          }
+
           this.$message({
             message: '读取成功',
             type: 'success',
@@ -1332,10 +1507,19 @@ export default {
             return;
           }
 
-          this.$message({
-            message: '写入成功',
-            type: 'success',
-          });
+          if (this.isDelRegData) {
+            this.isDelRegData = false;
+
+            this.$message({
+              message: '删除成功',
+              type: 'success',
+            });
+          } else {
+            this.$message({
+              message: '写入成功',
+              type: 'success',
+            });
+          }
 
           let regAddr = requestInfo.regAddr;
 
